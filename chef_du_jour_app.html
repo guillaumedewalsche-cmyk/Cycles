@@ -1,0 +1,334 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --orange: #D85A30; --orange-bg: #FAECE7; --orange-light: #F5C4B3;
+  --ink: var(--color-text-primary); --muted: var(--color-text-secondary);
+  --faint: var(--color-text-tertiary); --bg: var(--color-background-primary);
+  --bg2: var(--color-background-secondary); --bg3: var(--color-background-tertiary);
+  --border: var(--color-border-tertiary);
+}
+.app { max-width: 380px; margin: 0 auto; font-size: 14px; }
+.tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 1rem; }
+.tab { flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+.tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+.pane { display: none; } .pane.active { display: block; }
+
+.hero { background: var(--bg2); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.hero-label { font-size: 11px; font-weight: 500; color: var(--orange); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.hero-title { font-size: 18px; font-weight: 500; color: var(--ink); }
+
+.search-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.kw-input { flex: 1; padding: 8px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--bg); color: var(--ink); font-size: 14px; outline: none; }
+.kw-input:focus { border-color: var(--orange); }
+.gen-btn { padding: 8px 16px; border-radius: var(--border-radius-md); border: none; background: var(--orange); color: white; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.gen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+.tag { padding: 4px 12px; border-radius: 100px; border: 0.5px solid var(--border); background: var(--bg2); font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.tag.on { background: var(--orange-bg); color: var(--orange); border-color: var(--orange-light); }
+
+.recipe-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--border-radius-lg); overflow: hidden; margin-bottom: 1rem; }
+.recipe-card.animin { animation: slideIn 0.3s ease forwards; }
+@keyframes slideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+.card-emoji-bar { background: var(--bg2); padding: 24px; text-align: center; font-size: 56px; position: relative; }
+.card-badges { position: absolute; bottom: 8px; left: 8px; right: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+.cbadge { padding: 3px 9px; border-radius: 100px; background: var(--bg); border: 0.5px solid var(--border); font-size: 11px; font-weight: 500; color: var(--muted); }
+
+.card-body { padding: 1rem 1.25rem; }
+.card-name { font-size: 18px; font-weight: 500; color: var(--ink); margin-bottom: 6px; line-height: 1.3; }
+.card-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
+
+.sec-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--orange); margin-bottom: 8px; }
+.ing-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+.ing { padding: 4px 11px; border-radius: 100px; background: var(--bg2); border: 0.5px solid var(--border); font-size: 12px; font-weight: 500; color: var(--muted); }
+.steps { margin-bottom: 1rem; }
+.step { display: flex; gap: 10px; margin-bottom: 10px; }
+.snum { width: 22px; height: 22px; border-radius: 50%; background: var(--color-background-tertiary); font-size: 11px; font-weight: 500; color: var(--muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.stxt { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+.card-actions { display: flex; gap: 8px; padding-top: 4px; }
+.btn-save { flex: 1; padding: 10px; border-radius: var(--border-radius-md); border: none; background: var(--orange); color: white; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.btn-save.saved { background: #3B6D11; }
+.btn-other { padding: 10px 14px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--bg2); font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+.skeleton { background: var(--bg2); border-radius: var(--border-radius-lg); padding: 1rem; margin-bottom: 1rem; }
+.sk-block { background: var(--bg3); border-radius: 6px; margin-bottom: 10px; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+
+.empty { text-align: center; padding: 2rem 1rem; color: var(--faint); }
+.empty i { font-size: 40px; margin-bottom: 12px; display: block; }
+
+.saved-item { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; cursor: pointer; transition: background 0.12s; }
+.saved-item:hover { background: var(--bg2); }
+.saved-row { display: flex; gap: 12px; align-items: center; }
+.saved-emoji { font-size: 28px; flex-shrink: 0; }
+.saved-info { flex: 1; min-width: 0; }
+.saved-name { font-size: 14px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-meta { font-size: 12px; color: var(--faint); margin-top: 2px; }
+.del-btn { width: 32px; height: 32px; border-radius: 50%; border: 0.5px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.del-btn i { font-size: 16px; color: var(--color-text-danger); }
+
+.detail-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+.detail-sheet { background: var(--bg); border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; width: 100%; max-width: 380px; padding: 1.5rem; }
+.detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.close-btn { width: 30px; height: 30px; border-radius: 50%; border: 0.5px solid var(--border); background: var(--bg2); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.close-btn i { font-size: 16px; color: var(--muted); }
+</style>
+
+<div class="app">
+  <h2 class="sr-only">Application de recettes de cuisine générées par IA</h2>
+
+  <div class="hero">
+    <div class="hero-label" id="heroDate">—</div>
+    <div class="hero-title">Que cuisinez-vous aujourd'hui ?</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('home',this)"><i class="ti ti-flame" aria-hidden="true"></i> Recette du jour</div>
+    <div class="tab" onclick="showTab('saved',this)"><i class="ti ti-heart" aria-hidden="true"></i> Sauvegardées <span id="savedBadge"></span></div>
+  </div>
+
+  <div id="pane-home" class="pane active">
+    <div class="search-row">
+      <input class="kw-input" id="kwInput" placeholder="mot-clé : pasta, végétarien, rapide…" type="text" onkeydown="if(event.key==='Enter')gen()">
+      <button class="gen-btn" id="genBtn" onclick="gen()"><i class="ti ti-player-play" aria-hidden="true"></i> Générer</button>
+    </div>
+    <div class="tags">
+      <span class="tag" onclick="pickTag(this,'Végétarien')">🥦 Végétarien</span>
+      <span class="tag" onclick="pickTag(this,'Rapide')">⚡ Rapide</span>
+      <span class="tag" onclick="pickTag(this,'Italien')">🇮🇹 Italien</span>
+      <span class="tag" onclick="pickTag(this,'Asiatique')">🥢 Asiatique</span>
+      <span class="tag" onclick="pickTag(this,'Dessert')">🍰 Dessert</span>
+      <span class="tag" onclick="pickTag(this,'Français')">🥖 Français</span>
+      <span class="tag" onclick="pickTag(this,'Healthy')">💚 Healthy</span>
+    </div>
+    <div id="recipeArea"></div>
+  </div>
+
+  <div id="pane-saved" class="pane">
+    <div id="savedArea"></div>
+  </div>
+</div>
+
+<!-- Detail overlay -->
+<div id="detailOverlay" class="detail-overlay" style="display:none;" onclick="closeDetail(event)">
+  <div class="detail-sheet" id="detailSheet">
+    <div class="detail-header">
+      <div>
+        <div style="font-size:40px;margin-bottom:6px;" id="dEmoji"></div>
+        <div style="font-size:18px;font-weight:500;color:var(--ink);" id="dName"></div>
+      </div>
+      <button class="close-btn" onclick="closeDetail()"><i class="ti ti-x"></i></button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1rem;" id="dDesc"></p>
+    <div class="sec-title">Ingrédients</div>
+    <div class="ing-list" id="dIngs" style="margin-bottom:1rem;"></div>
+    <div class="sec-title">Étapes</div>
+    <div class="steps" id="dSteps"></div>
+  </div>
+</div>
+
+<script>
+const DAYS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const d = new Date();
+document.getElementById('heroDate').textContent = `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+
+let current = null;
+let loading = false;
+
+function getSaved() { try { return JSON.parse(localStorage.getItem('cdj_saved')||'[]'); } catch(e) { return []; } }
+function setSaved(a) { try { localStorage.setItem('cdj_saved', JSON.stringify(a)); } catch(e) {} }
+function updateBadge() {
+  const n = getSaved().length;
+  document.getElementById('savedBadge').textContent = n > 0 ? ` (${n})` : '';
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if (name === 'saved') renderSaved();
+}
+
+function pickTag(el, val) {
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('on'));
+  const kw = document.getElementById('kwInput');
+  if (kw.value === val) { kw.value = ''; } else { el.classList.add('on'); kw.value = val; }
+}
+
+function showSkeleton() {
+  document.getElementById('recipeArea').innerHTML = `
+    <div class="skeleton">
+      <div class="sk-block" style="height:100px;margin-bottom:12px;border-radius:10px;"></div>
+      <div class="sk-block" style="height:20px;width:70%;"></div>
+      <div class="sk-block" style="height:14px;width:90%;"></div>
+      <div class="sk-block" style="height:14px;width:75%;"></div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <div class="sk-block" style="height:28px;width:60px;border-radius:100px;margin:0;"></div>
+        <div class="sk-block" style="height:28px;width:80px;border-radius:100px;margin:0;"></div>
+        <div class="sk-block" style="height:28px;width:70px;border-radius:100px;margin:0;"></div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:13px;color:var(--faint);font-style:italic;">✨ L'IA prépare votre recette…</p>`;
+}
+
+async function gen() {
+  if (loading) return;
+  loading = true;
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader" aria-hidden="true"></i> …';
+  showSkeleton();
+
+  const kw = document.getElementById('kwInput').value.trim();
+  const today = `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+
+  const prompt = `Tu es un chef cuisinier créatif et enthousiaste. Génère une recette originale et délicieuse${kw ? ` inspirée par : "${kw}"` : ` pour ${today}`}.
+
+Réponds UNIQUEMENT en JSON valide (sans backticks, sans texte avant ou après) :
+{"emoji":"🍝","name":"Nom","description":"Description appétissante en 2 phrases.","time":"30 min","difficulty":"Facile","servings":"4 personnes","calories":"450 kcal","ingredients":["200g de pâtes","3 tomates"],"steps":["Étape 1…","Étape 2…","Étape 3…"]}
+
+Règles : 3 à 6 étapes précises, ingrédients avec quantités, sois créatif et inspirant !`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    let txt = (data.content||[]).map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    const r = JSON.parse(txt);
+    current = r;
+    renderCard(r);
+  } catch(e) {
+    document.getElementById('recipeArea').innerHTML = `
+      <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--border-radius-lg);padding:1.5rem;text-align:center;">
+        <i class="ti ti-alert-circle" style="font-size:36px;color:var(--color-text-danger);margin-bottom:10px;display:block;" aria-hidden="true"></i>
+        <div style="font-weight:500;color:var(--ink);margin-bottom:6px;">Impossible de générer la recette</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Vérifiez votre connexion et réessayez.</div>
+        <button onclick="gen()" style="padding:9px 20px;border-radius:var(--border-radius-md);border:none;background:var(--orange);color:white;font-weight:500;cursor:pointer;">Réessayer</button>
+      </div>`;
+  } finally {
+    loading = false;
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-refresh" aria-hidden="true"></i> Autre';
+  }
+}
+
+function renderCard(r) {
+  const saved = getSaved();
+  const isSaved = saved.some(s => s.name === r.name);
+  const area = document.getElementById('recipeArea');
+  area.innerHTML = `
+    <div class="recipe-card animin">
+      <div class="card-emoji-bar">
+        ${r.emoji||'🍽️'}
+        <div class="card-badges">
+          ${r.time?`<span class="cbadge">⏱ ${r.time}</span>`:''}
+          ${r.difficulty?`<span class="cbadge">👨‍🍳 ${r.difficulty}</span>`:''}
+          ${r.servings?`<span class="cbadge">👥 ${r.servings}</span>`:''}
+          ${r.calories?`<span class="cbadge">🔥 ${r.calories}</span>`:''}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-name">${r.name}</div>
+        <div class="card-desc">${r.description}</div>
+        <div class="sec-title">Ingrédients</div>
+        <div class="ing-list">${(r.ingredients||[]).map(i=>`<span class="ing">${i}</span>`).join('')}</div>
+        <div class="sec-title">Préparation</div>
+        <div class="steps">${(r.steps||[]).map((s,i)=>`<div class="step"><div class="snum">${i+1}</div><div class="stxt">${s}</div></div>`).join('')}</div>
+        <div class="card-actions">
+          <button class="btn-save${isSaved?' saved':''}" id="saveMainBtn" onclick="saveMain()">
+            <i class="ti ti-heart${isSaved?'-filled':''}" aria-hidden="true"></i>
+            ${isSaved ? 'Sauvegardée' : 'Sauvegarder'}
+          </button>
+          <button class="btn-other" onclick="gen()">
+            <i class="ti ti-refresh" aria-hidden="true"></i> Autre
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function saveMain() {
+  if (!current) return;
+  const saved = getSaved();
+  if (saved.some(s => s.name === current.name)) {
+    showToast('Déjà sauvegardée !'); return;
+  }
+  current.savedAt = new Date().toISOString();
+  saved.unshift(current);
+  setSaved(saved);
+  updateBadge();
+  const btn = document.getElementById('saveMainBtn');
+  if (btn) { btn.classList.add('saved'); btn.innerHTML = '<i class="ti ti-heart-filled" aria-hidden="true"></i> Sauvegardée'; }
+  showToast('Recette sauvegardée 🎉');
+}
+
+function renderSaved() {
+  const saved = getSaved();
+  const area = document.getElementById('savedArea');
+  if (!saved.length) {
+    area.innerHTML = `<div class="empty"><i class="ti ti-heart" aria-hidden="true"></i><div>Aucune recette sauvegardée</div><div style="font-size:12px;margin-top:6px;color:var(--faint);">Générez des recettes et sauvegardez vos coups de cœur !</div></div>`;
+    return;
+  }
+  area.innerHTML = saved.map((r,i) => `
+    <div class="saved-item" onclick="openDetail(${i})">
+      <div class="saved-row">
+        <div class="saved-emoji">${r.emoji||'🍽️'}</div>
+        <div class="saved-info">
+          <div class="saved-name">${r.name}</div>
+          <div class="saved-meta">${[r.time,r.difficulty,r.servings].filter(Boolean).join(' · ')}</div>
+        </div>
+        <button class="del-btn" onclick="event.stopPropagation();delSaved(${i})" aria-label="Supprimer">
+          <i class="ti ti-trash" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function delSaved(i) {
+  const saved = getSaved();
+  saved.splice(i,1);
+  setSaved(saved);
+  updateBadge();
+  renderSaved();
+  showToast('Recette supprimée');
+}
+
+function openDetail(i) {
+  const r = getSaved()[i];
+  if (!r) return;
+  document.getElementById('dEmoji').textContent = r.emoji||'🍽️';
+  document.getElementById('dName').textContent = r.name;
+  document.getElementById('dDesc').textContent = r.description;
+  document.getElementById('dIngs').innerHTML = (r.ingredients||[]).map(x=>`<span class="ing">${x}</span>`).join('');
+  document.getElementById('dSteps').innerHTML = (r.steps||[]).map((s,i)=>`<div class="step"><div class="snum">${i+1}</div><div class="stxt">${s}</div></div>`).join('');
+  document.getElementById('detailOverlay').style.display = 'flex';
+}
+
+function closeDetail(e) {
+  if (!e || e.target === document.getElementById('detailOverlay')) {
+    document.getElementById('detailOverlay').style.display = 'none';
+  }
+}
+
+function showToast(msg) {
+  let t = document.getElementById('_toast');
+  if (!t) { t = document.createElement('div'); t.id = '_toast'; t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--color-text-primary);color:var(--color-background-primary);padding:9px 18px;border-radius:100px;font-size:13px;font-weight:500;z-index:999;pointer-events:none;transition:opacity 0.3s;'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.opacity = '1';
+  clearTimeout(t._t); t._t = setTimeout(() => t.style.opacity = '0', 2500);
+}
+
+updateBadge();
+gen();
+</script>
