@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#D85A30">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chef du Jour">
+<meta name="description" content="Une recette différente chaque jour, générée par IA">
+<title>Chef du Jour</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ─── RESET ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; }
+body { height: 100%; font-family: 'DM Sans', system-ui, sans-serif; background: #1A1410; color: #1A1410; overflow: hidden; }
+
+/* ─── TOKENS ─────────────────────────────────────────────── */
+:root {
+  /* brand */
+  --fire:      #D85A30;
+  --fire-deep: #A8401E;
+  --fire-glow: rgba(216,90,48,0.2);
+  --fire-bg:   #FAECE7;
+  --fire-rim:  #F5C4B3;
+  /* neutrals */
+  --paper:     #FAF7F2;
+  --paper-2:   #F2EDE4;
+  --paper-3:   #E8E0D4;
+  --stone:     #C4BAB0;
+  --ash:       #8A8078;
+  --coal:      #3C3028;
+  --ink:       #1A1410;
+  /* semantic */
+  --green:     #3A7D44;
+  --green-bg:  #EBF5EC;
+  /* ui */
+  --nav-h:     68px;
+  --safe-b:    env(safe-area-inset-bottom, 0px);
+  --r-sm:      8px;
+  --r-md:      14px;
+  --r-lg:      20px;
+  --r-xl:      28px;
+  --sh-card:   0 2px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+  --sh-lift:   0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  --font-disp: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+}
+
+/* ─── SCROLLBAR ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 0; background: transparent; }
+
+/* ─── APP SHELL ──────────────────────────────────────────── */
+.app {
+  display: flex; flex-direction: column;
+  height: 100dvh; max-width: 430px; margin: 0 auto;
+  background: var(--paper); position: relative; overflow: hidden;
+  box-shadow: 0 0 80px rgba(0,0,0,0.6);
+}
+
+/* ─── SCREENS ────────────────────────────────────────────── */
+.screens { flex: 1; overflow: hidden; position: relative; }
+
+.screen {
+  position: absolute; inset: 0;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--nav-h) + var(--safe-b) + 20px);
+  opacity: 0; pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity 0.26s ease, transform 0.26s ease;
+}
+.screen.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+/* ─── NAV ────────────────────────────────────────────────── */
+.bottom-nav {
+  height: calc(var(--nav-h) + var(--safe-b));
+  padding-bottom: var(--safe-b);
+  background: var(--ink);
+  display: flex; position: relative; z-index: 100; flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 5px;
+  border: none; background: none; cursor: pointer;
+  color: var(--ash); font-family: var(--font-body);
+  font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
+  text-transform: uppercase; padding: 8px 0 6px;
+  transition: color 0.18s;
+}
+.nav-btn.active { color: var(--fire); }
+.nav-btn svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.18s; }
+
+/* ─── TOAST ──────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: calc(var(--nav-h) + var(--safe-b) + 14px);
+  left: 50%; transform: translateX(-50%) translateY(16px);
+  background: var(--ink); color: var(--paper);
+  padding: 11px 22px; border-radius: 100px;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.01em;
+  white-space: nowrap; opacity: 0; pointer-events: none; z-index: 999;
+  transition: all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── INSTALL BANNER ─────────────────────────────────────── */
+.install-banner {
+  display: none; align-items: center; gap: 12px;
+  margin: 12px 16px 0;
+  padding: 12px 16px; border-radius: var(--r-md);
+  background: var(--ink); color: var(--paper);
+  box-shadow: var(--sh-lift); cursor: pointer;
+}
+.install-banner.visible { display: flex; }
+.install-banner svg { width: 20px; height: 20px; stroke: var(--fire); stroke-width: 2; fill: none; flex-shrink: 0; }
+.install-banner-text { flex: 1; }
+.install-banner-title { font-size: 13px; font-weight: 600; }
+.install-banner-sub { font-size: 11px; opacity: 0.6; margin-top: 1px; }
+.install-banner-close { opacity: 0.5; font-size: 20px; line-height: 1; padding: 0 4px; }
+
+/* ─── SETUP BANNER ───────────────────────────────────────── */
+.setup-banner {
+  margin: 12px 16px 0;
+  padding: 14px 16px; border-radius: var(--r-md);
+  background: #FEF3C7; border: 1px solid #FDE68A;
+}
+.setup-banner strong { font-size: 13px; color: #92400E; display: block; margin-bottom: 4px; }
+.setup-banner p { font-size: 12px; color: #B45309; line-height: 1.5; }
+.setup-banner a { color: #92400E; font-weight: 600; }
+
+/* ════════════════════════════════════════════════════════════
+   HOME SCREEN
+   ════════════════════════════════════════════════════════════ */
+
+/* Hero */
+.home-hero {
+  background: var(--ink);
+  padding: 54px 24px 32px;
+  position: relative; overflow: hidden;
+}
+.home-hero::before {
+  content: '';
+  position: absolute; top: -100px; right: -100px;
+  width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(216,90,48,0.14) 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--fire); margin-bottom: 10px;
+}
+.hero-title {
+  font-family: var(--font-disp);
+  font-size: 38px; font-style: italic;
+  color: var(--paper); line-height: 1.1; margin-bottom: 8px;
+}
+.hero-sub { font-size: 13px; color: var(--ash); font-weight: 300; line-height: 1.5; }
+.hero-fade {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 36px;
+  background: linear-gradient(to bottom, transparent, var(--paper));
+  pointer-events: none;
+}
+
+/* Search */
+.search-wrap { padding: 16px 16px 0; }
+.search-row { display: flex; gap: 10px; align-items: center; }
+.kw-input {
+  flex: 1; padding: 13px 16px;
+  border: 1.5px solid var(--paper-3);
+  border-radius: 100px; background: white;
+  font-family: var(--font-body); font-size: 14px; color: var(--ink);
+  outline: none; transition: border-color 0.18s, box-shadow 0.18s;
+}
+.kw-input:focus { border-color: var(--fire); box-shadow: 0 0 0 3px var(--fire-glow); }
+.kw-input::placeholder { color: var(--stone); }
+.gen-btn {
+  width: 48px; height: 48px; border-radius: 50%; border: none;
+  background: var(--fire); cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px var(--fire-glow);
+  transition: all 0.18s;
+}
+.gen-btn:active { transform: scale(0.92); box-shadow: none; }
+.gen-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.gen-btn svg { width: 20px; height: 20px; stroke: white; stroke-width: 2.4; fill: none; stroke-linecap: round; }
+
+/* Tags */
+.tags-row {
+  display: flex; gap: 8px;
+  padding: 10px 16px 0;
+  overflow-x: auto; scrollbar-width: none;
+}
+.tags-row::-webkit-scrollbar { display: none; }
+.tag {
+  padding: 7px 15px; border-radius: 100px; flex-shrink: 0;
+  border: 1.5px solid var(--paper-3); background: white;
+  font-size: 12px; font-weight: 600; color: var(--ash);
+  cursor: pointer; transition: all 0.15s;
+}
+.tag.on { border-color: var(--fire-rim); background: var(--fire-bg); color: var(--fire-deep); }
+
+/* Recipe area */
+#recipeArea { padding-top: 16px; }
+
+/* Skeleton */
+.skeleton-card {
+  margin: 0 16px 12px; border-radius: var(--r-lg);
+  background: white; border: 1px solid var(--paper-3); overflow: hidden;
+  box-shadow: var(--sh-card);
+}
+.sk-img { height: 190px; background: var(--paper-2); }
+.sk-body { padding: 20px; }
+.sk { background: var(--paper-2); border-radius: 6px; margin-bottom: 10px; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.45;} }
+.loading-msg { text-align: center; padding: 12px 16px 0; font-size: 13px; font-style: italic; color: var(--ash); }
+
+/* Error */
+.error-card {
+  margin: 0 16px 12px; border-radius: var(--r-lg);
+  background: white; border: 1px solid var(--paper-3);
+  padding: 28px 20px; text-align: center; box-shadow: var(--sh-card);
+}
+.error-icon { font-size: 40px; margin-bottom: 12px; }
+.error-title { font-family: var(--font-disp); font-size: 20px; font-style: italic; color: var(--ink); margin-bottom: 6px; }
+.error-msg { font-size: 13px; color: var(--ash); line-height: 1.6; margin-bottom: 16px; }
+.retry-btn {
+  padding: 11px 24px; border-radius: 100px; border: none;
+  background: var(--fire); color: white;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+
+/* ─── RECIPE CARD ────────────────────────────────────────── */
+.recipe-card {
+  margin: 0 16px 12px; border-radius: var(--r-lg);
+  background: white; border: 1px solid var(--paper-3);
+  overflow: hidden; box-shadow: var(--sh-card);
+}
+.recipe-card.appear { animation: cardIn 0.38s cubic-bezier(0.34, 1.2, 0.64, 1) both; }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateX(24px) scale(0.98); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+.card-visual {
+  height: 190px; background: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 80px; position: relative;
+}
+.card-visual::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.45));
+}
+.card-chips {
+  position: absolute; bottom: 12px; left: 14px; right: 14px;
+  display: flex; gap: 7px; flex-wrap: wrap; z-index: 1;
+}
+.chip {
+  padding: 4px 11px; border-radius: 100px;
+  background: rgba(255,255,255,0.14);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.18);
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.9);
+  display: flex; align-items: center; gap: 5px;
+}
+
+.card-body { padding: 20px; }
+.card-name {
+  font-family: var(--font-disp);
+  font-size: 26px; font-weight: 700; color: var(--ink);
+  line-height: 1.2; margin-bottom: 8px;
+}
+.card-desc { font-size: 13px; color: var(--ash); line-height: 1.65; margin-bottom: 18px; }
+
+.sec-head {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--fire); margin-bottom: 10px;
+}
+.ing-wrap { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 20px; }
+.ing {
+  padding: 5px 13px; border-radius: 100px;
+  background: var(--paper-2); border: 1px solid var(--paper-3);
+  font-size: 12px; font-weight: 600; color: var(--coal);
+}
+.steps-list { margin-bottom: 20px; }
+.step-row { display: flex; gap: 12px; margin-bottom: 13px; align-items: flex-start; }
+.step-n {
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+  background: var(--paper-2); border: 1px solid var(--paper-3);
+  font-size: 11px; font-weight: 700; color: var(--ash);
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.step-t { font-size: 13px; color: var(--coal); line-height: 1.6; }
+
+.card-actions { display: flex; gap: 10px; }
+.btn-save {
+  flex: 1; padding: 13px; border-radius: var(--r-md); border: none;
+  background: var(--fire); color: white;
+  font-family: var(--font-body); font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.18s; box-shadow: 0 4px 12px var(--fire-glow);
+}
+.btn-save:active { transform: scale(0.97); box-shadow: none; }
+.btn-save.saved { background: var(--green); box-shadow: none; }
+.btn-save svg { width: 18px; height: 18px; stroke: white; stroke-width: 2; fill: none; stroke-linecap: round; }
+.btn-other {
+  padding: 13px 18px; border-radius: var(--r-md);
+  border: 1.5px solid var(--paper-3); background: white;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  color: var(--ash); cursor: pointer;
+  display: flex; align-items: center; gap: 7px; transition: all 0.15s;
+}
+.btn-other:active { background: var(--paper-2); }
+.btn-other svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; }
+
+/* ════════════════════════════════════════════════════════════
+   SAVED SCREEN
+   ════════════════════════════════════════════════════════════ */
+.saved-header {
+  background: var(--ink); padding: 54px 24px 28px; position: relative; overflow: hidden;
+}
+.saved-header::before {
+  content: ''; position: absolute; top: -80px; left: -80px;
+  width: 260px; height: 260px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(216,90,48,0.1) 0%, transparent 65%);
+  pointer-events: none;
+}
+.saved-eyebrow { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--fire); margin-bottom: 10px; }
+.saved-title { font-family: var(--font-disp); font-size: 38px; font-style: italic; color: var(--paper); line-height: 1.1; }
+.saved-count { font-size: 13px; color: var(--ash); margin-top: 6px; }
+
+.empty-state {
+  text-align: center; padding: 52px 32px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.empty-emoji { font-size: 52px; }
+.empty-title { font-family: var(--font-disp); font-size: 24px; font-style: italic; color: var(--ink); }
+.empty-sub { font-size: 14px; color: var(--ash); line-height: 1.6; }
+
+.saved-list { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+
+.saved-item {
+  background: white; border-radius: var(--r-lg);
+  border: 1px solid var(--paper-3);
+  display: flex; align-items: stretch; overflow: hidden;
+  box-shadow: var(--sh-card); cursor: pointer;
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+.saved-item:active { transform: scale(0.99); box-shadow: none; }
+
+.saved-visual {
+  width: 76px; background: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; flex-shrink: 0;
+}
+.saved-content { flex: 1; padding: 14px 12px 14px 16px; min-width: 0; }
+.saved-name {
+  font-family: var(--font-disp); font-size: 17px; font-weight: 700;
+  color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+.saved-meta { font-size: 11px; color: var(--stone); font-weight: 500; display: flex; gap: 10px; flex-wrap: wrap; }
+.saved-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 100px;
+  background: var(--paper-2); font-size: 11px; font-weight: 600; color: var(--ash); margin-top: 6px;
+}
+.saved-side {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: space-between; padding: 12px 12px 12px 0; gap: 4px;
+}
+.icon-btn {
+  width: 34px; height: 34px; border-radius: 50%; border: none;
+  background: transparent; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.icon-btn:active { background: var(--paper-2); }
+.icon-btn svg { width: 18px; height: 18px; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn.eye svg { stroke: var(--fire); }
+.icon-btn.del svg { stroke: #C0392B; }
+
+/* ════════════════════════════════════════════════════════════
+   DETAIL SHEET (bottom sheet)
+   ════════════════════════════════════════════════════════════ */
+.sheet-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  z-index: 200; display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.sheet-backdrop.open { opacity: 1; pointer-events: all; }
+
+.detail-sheet {
+  background: var(--paper); border-radius: 24px 24px 0 0;
+  max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  width: 100%; max-width: 430px;
+  transform: translateY(100%);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sheet-backdrop.open .detail-sheet { transform: translateY(0); }
+
+.sheet-handle { display: flex; justify-content: center; padding: 14px 0 0; }
+.sheet-handle span { width: 38px; height: 4px; border-radius: 2px; background: var(--paper-3); display: block; }
+
+.sheet-hero {
+  background: var(--ink); padding: 20px 24px 28px; position: relative; overflow: hidden;
+}
+.sheet-hero::before {
+  content: ''; position: absolute; top: -60px; right: -60px;
+  width: 200px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(216,90,48,0.12) 0%, transparent 65%);
+  pointer-events: none;
+}
+.sheet-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.08); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.sheet-close svg { width: 18px; height: 18px; stroke: rgba(255,255,255,0.7); stroke-width: 2; fill: none; stroke-linecap: round; }
+.sheet-emoji { font-size: 52px; margin-bottom: 14px; display: block; }
+.sheet-name { font-family: var(--font-disp); font-size: 28px; font-style: italic; color: var(--paper); line-height: 1.2; margin-bottom: 12px; }
+.sheet-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.sheet-chip {
+  padding: 5px 13px; border-radius: 100px;
+  background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.14);
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.75);
+}
+
+.sheet-body { padding: 24px 20px 32px; }
+.sheet-desc { font-size: 15px; color: var(--ash); line-height: 1.7; margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── TOAST ── -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ── DETAIL SHEET ── -->
+  <div class="sheet-backdrop" id="sheetBackdrop" onclick="closeSheet(event)">
+    <div class="detail-sheet" id="detailSheet">
+      <div class="sheet-handle"><span></span></div>
+      <div class="sheet-hero">
+        <button class="sheet-close" onclick="closeSheet()" aria-label="Fermer">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <span class="sheet-emoji" id="sEmoji">🍽️</span>
+        <div class="sheet-name" id="sName"></div>
+        <div class="sheet-chips" id="sChips"></div>
+      </div>
+      <div class="sheet-body">
+        <p class="sheet-desc" id="sDesc"></p>
+        <div class="sec-head">Ingrédients</div>
+        <div class="ing-wrap" id="sIngs" style="margin-bottom:24px;"></div>
+        <div class="sec-head">Préparation</div>
+        <div class="steps-list" id="sSteps"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCREENS ── -->
+  <div class="screens">
+
+    <!-- HOME -->
+    <div id="screen-home" class="screen active">
+
+      <div class="home-hero">
+        <div class="hero-eyebrow" id="heroDate">Chargement…</div>
+        <div class="hero-title">Que cuisinez-vous<br>aujourd'hui ?</div>
+        <div class="hero-sub">Une recette générée par IA, rien que pour vous</div>
+        <div class="hero-fade"></div>
+      </div>
+
+      <div id="installBanner" class="install-banner">
+        <svg viewBox="0 0 24 24"><path d="M12 2v13M8 11l4 4 4-4"/><path d="M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>
+        <div class="install-banner-text">
+          <div class="install-banner-title">Installer l'application</div>
+          <div class="install-banner-sub">Accès rapide depuis votre écran d'accueil</div>
+        </div>
+        <span class="install-banner-close" onclick="dismissInstall(event)">✕</span>
+      </div>
+
+      <div id="setupBanner" class="setup-banner" style="display:none;">
+        <strong>⚙️ Configuration requise</strong>
+        <p>Collez l'URL de votre Cloudflare Worker dans le code (<code>PROXY_URL</code>) pour activer la génération IA.<br>
+        Voir <a href="cloudflare-worker.js" target="_blank">cloudflare-worker.js</a> pour les instructions.</p>
+      </div>
+
+      <div class="search-wrap">
+        <div class="search-row">
+          <input class="kw-input" id="kwInput" type="text"
+            placeholder="Un mot-clé… pasta, végétarien, rapide…"
+            onkeydown="if(event.key==='Enter')generateRecipe()">
+          <button class="gen-btn" id="genBtn" onclick="generateRecipe()" aria-label="Générer une recette">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="tags-row" id="tagsRow">
+        <button class="tag" onclick="pickTag(this,'Végétarien')">🥦 Végétarien</button>
+        <button class="tag" onclick="pickTag(this,'Rapide &lt;20min')">⚡ Rapide</button>
+        <button class="tag" onclick="pickTag(this,'Italien')">🇮🇹 Italien</button>
+        <button class="tag" onclick="pickTag(this,'Asiatique')">🥢 Asiatique</button>
+        <button class="tag" onclick="pickTag(this,'Dessert')">🍰 Dessert</button>
+        <button class="tag" onclick="pickTag(this,'Français')">🥖 Français</button>
+        <button class="tag" onclick="pickTag(this,'Healthy')">💚 Healthy</button>
+        <button class="tag" onclick="pickTag(this,'Sans gluten')">🌾 Sans gluten</button>
+        <button class="tag" onclick="pickTag(this,'Épicé')">🌶️ Épicé</button>
+      </div>
+
+      <div id="recipeArea"></div>
+
+    </div><!-- /home -->
+
+    <!-- SAVED -->
+    <div id="screen-saved" class="screen">
+      <div class="saved-header">
+        <div class="saved-eyebrow">Mes recettes</div>
+        <div class="saved-title">Coups de cœur</div>
+        <div class="saved-count" id="savedCount">Aucune recette sauvegardée</div>
+      </div>
+      <div id="savedContainer"></div>
+    </div>
+
+  </div><!-- /screens -->
+
+  <!-- NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="showScreen('home',this)" aria-label="Accueil">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Accueil
+    </button>
+    <button class="nav-btn" onclick="showScreen('saved',this)" aria-label="Sauvegardées">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      Sauvegardées
+      <span id="navBadge" style="position:absolute;top:8px;font-size:10px;font-weight:700;color:var(--fire);opacity:0;transition:opacity 0.2s;"></span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   CONFIG — Remplacez par votre URL Cloudflare Worker
+   ══════════════════════════════════════════════════════════ */
+const PROXY_URL = ""; // ex: "https://guillaumedewalsche.workers.dev"
+
+/* ══════════════════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════════════════ */
+let currentRecipe = null;
+let isLoading     = false;
+let deferredPrompt = null;
+let detailIndex   = -1;
+
+/* ══════════════════════════════════════════════════════════
+   PERSISTENCE
+   ══════════════════════════════════════════════════════════ */
+function getSaved() {
+  try { return JSON.parse(localStorage.getItem('cdj_saved') || '[]'); } catch { return []; }
+}
+function setSaved(arr) {
+  try { localStorage.setItem('cdj_saved', JSON.stringify(arr)); } catch {}
+}
+
+/* ══════════════════════════════════════════════════════════
+   DATE
+   ══════════════════════════════════════════════════════════ */
+(function setDate() {
+  const DAYS   = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const d = new Date();
+  document.getElementById('heroDate').textContent =
+    `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+})();
+
+/* ══════════════════════════════════════════════════════════
+   NAVIGATION
+   ══════════════════════════════════════════════════════════ */
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'saved') renderSaved();
+}
+
+/* ══════════════════════════════════════════════════════════
+   TAGS
+   ══════════════════════════════════════════════════════════ */
+function pickTag(el, val) {
+  const kw = document.getElementById('kwInput');
+  const wasOn = el.classList.contains('on');
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('on'));
+  if (!wasOn) { el.classList.add('on'); kw.value = val; }
+  else { kw.value = ''; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   SKELETON
+   ══════════════════════════════════════════════════════════ */
+function showSkeleton() {
+  document.getElementById('recipeArea').innerHTML = `
+    <div class="skeleton-card">
+      <div class="sk-img sk"></div>
+      <div class="sk-body">
+        <div class="sk" style="height:28px;width:72%;margin-bottom:12px;"></div>
+        <div class="sk" style="height:14px;width:95%;"></div>
+        <div class="sk" style="height:14px;width:82%;"></div>
+        <div class="sk" style="height:14px;width:64%;margin-bottom:16px;"></div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;">
+          ${[70,90,80,100].map(w=>`<div class="sk" style="height:30px;width:${w}px;border-radius:100px;margin:0;"></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <p class="loading-msg">✨ L'IA mitonne votre recette…</p>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   GENERATE
+   ══════════════════════════════════════════════════════════ */
+async function generateRecipe() {
+  if (isLoading) return;
+
+  if (!PROXY_URL) {
+    document.getElementById('setupBanner').style.display = 'block';
+    showError('Configurez d\'abord votre Cloudflare Worker.', false);
+    return;
+  }
+
+  isLoading = true;
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;stroke-width:2.2;fill:none;stroke-linecap:round;animation:spin 0.9s linear infinite;"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>';
+
+  showSkeleton();
+
+  const kw = document.getElementById('kwInput').value.trim();
+  const today = document.getElementById('heroDate').textContent;
+
+  const prompt = `Tu es un chef cuisinier créatif et passionné. Génère une recette originale et délicieuse${kw ? ` sur le thème : "${kw}"` : ` pour aujourd'hui (${today})`}.
+
+Réponds UNIQUEMENT en JSON valide, sans backticks, sans texte avant ou après :
+{
+  "emoji": "🍝",
+  "name": "Nom de la recette",
+  "description": "Description appétissante en 2 phrases vivantes.",
+  "time": "35 min",
+  "difficulty": "Facile",
+  "servings": "4 personnes",
+  "calories": "480 kcal",
+  "ingredients": ["200g de pâtes", "3 tomates mûres", "2 gousses d'ail"],
+  "steps": ["Faire bouillir l'eau avec une pincée de sel...", "Pendant ce temps, chauffer l'huile...", "Mélanger et servir chaud."]
+}
+
+Règles : 3 à 6 étapes précises et vivantes, ingrédients avec quantités exactes, sois original et inspirant !`;
+
+  try {
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message || 'API error');
+
+    let txt = (data.content || []).map(b => b.text || '').join('');
+    txt = txt.replace(/```json|```/g, '').trim();
+    const recipe = JSON.parse(txt);
+    currentRecipe = recipe;
+    renderRecipeCard(recipe);
+
+  } catch (e) {
+    console.error(e);
+    showError('Impossible de générer la recette. Vérifiez la configuration du proxy ou votre connexion.', true);
+  } finally {
+    isLoading = false;
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;stroke-width:2.4;fill:none;stroke-linecap:round;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
+  }
+}
+
+function showError(msg, canRetry) {
+  document.getElementById('recipeArea').innerHTML = `
+    <div class="error-card">
+      <div class="error-icon">😕</div>
+      <div class="error-title">Oups !</div>
+      <p class="error-msg">${msg}</p>
+      ${canRetry ? '<button class="retry-btn" onclick="generateRecipe()">Réessayer</button>' : ''}
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RENDER CARD
+   ══════════════════════════════════════════════════════════ */
+function renderRecipeCard(r) {
+  const saved   = getSaved();
+  const isSaved = saved.some(s => s.name === r.name);
+
+  const chips = [
+    r.time     && `<div class="chip">⏱ ${r.time}</div>`,
+    r.difficulty && `<div class="chip">👨‍🍳 ${r.difficulty}</div>`,
+    r.servings && `<div class="chip">👥 ${r.servings}</div>`,
+    r.calories && `<div class="chip">🔥 ${r.calories}</div>`,
+  ].filter(Boolean).join('');
+
+  const ings  = (r.ingredients || []).map(i => `<span class="ing">${i}</span>`).join('');
+  const steps = (r.steps || []).map((s, i) => `
+    <div class="step-row">
+      <div class="step-n">${i + 1}</div>
+      <div class="step-t">${s}</div>
+    </div>`).join('');
+
+  const saveLabel = isSaved
+    ? `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="white" stroke="white"/></svg> Sauvegardée`
+    : `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Sauvegarder`;
+
+  document.getElementById('recipeArea').innerHTML = `
+    <div class="recipe-card appear" id="mainCard">
+      <div class="card-visual">
+        ${r.emoji || '🍽️'}
+        <div class="card-chips">${chips}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-name">${r.name}</div>
+        <div class="card-desc">${r.description}</div>
+        <div class="sec-head">Ingrédients</div>
+        <div class="ing-wrap">${ings}</div>
+        <div class="sec-head">Préparation</div>
+        <div class="steps-list">${steps}</div>
+        <div class="card-actions">
+          <button class="btn-save ${isSaved ? 'saved' : ''}" id="mainSaveBtn" onclick="saveCurrentRecipe()">${saveLabel}</button>
+          <button class="btn-other" onclick="generateRecipe()">
+            <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            Autre
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SAVE
+   ══════════════════════════════════════════════════════════ */
+function saveCurrentRecipe() {
+  if (!currentRecipe) return;
+  const saved = getSaved();
+  if (saved.some(s => s.name === currentRecipe.name)) {
+    showToast('Déjà dans vos coups de cœur !');
+    return;
+  }
+  currentRecipe.savedAt = new Date().toISOString();
+  saved.unshift(currentRecipe);
+  setSaved(saved);
+  updateBadge();
+
+  const btn = document.getElementById('mainSaveBtn');
+  if (btn) {
+    btn.classList.add('saved');
+    btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="white" stroke="white"/></svg> Sauvegardée`;
+  }
+  showToast('Recette sauvegardée 🎉');
+}
+
+/* ══════════════════════════════════════════════════════════
+   SAVED LIST
+   ══════════════════════════════════════════════════════════ */
+function renderSaved() {
+  const saved = getSaved();
+  const countEl = document.getElementById('savedCount');
+  const container = document.getElementById('savedContainer');
+
+  if (saved.length === 0) {
+    countEl.textContent = 'Aucune recette sauvegardée';
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-emoji">📭</div>
+        <div class="empty-title">Rien ici pour l'instant</div>
+        <p class="empty-sub">Générez des recettes sur l'accueil et sauvegardez vos coups de cœur pour les retrouver ici.</p>
+      </div>`;
+    return;
+  }
+
+  countEl.textContent = `${saved.length} recette${saved.length > 1 ? 's' : ''} sauvegardée${saved.length > 1 ? 's' : ''}`;
+  container.innerHTML = '<div class="saved-list">' + saved.map((r, i) => `
+    <div class="saved-item">
+      <div class="saved-visual">${r.emoji || '🍽️'}</div>
+      <div class="saved-content">
+        <div class="saved-name">${r.name}</div>
+        <div class="saved-meta">
+          ${r.time     ? `<span>⏱ ${r.time}</span>` : ''}
+          ${r.difficulty ? `<span>👨‍🍳 ${r.difficulty}</span>` : ''}
+        </div>
+        ${r.servings ? `<span class="saved-tag">👥 ${r.servings}</span>` : ''}
+      </div>
+      <div class="saved-side">
+        <button class="icon-btn eye" onclick="openDetail(${i})" aria-label="Voir la recette">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+        </button>
+        <button class="icon-btn del" onclick="deleteRecipe(event,${i})" aria-label="Supprimer">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>
+    </div>`).join('') + '</div>';
+}
+
+function deleteRecipe(evt, i) {
+  evt.stopPropagation();
+  const saved = getSaved();
+  const name  = saved[i].name;
+  saved.splice(i, 1);
+  setSaved(saved);
+  updateBadge();
+  renderSaved();
+  showToast(`« ${name} » supprimée`);
+}
+
+/* ══════════════════════════════════════════════════════════
+   DETAIL SHEET
+   ══════════════════════════════════════════════════════════ */
+function openDetail(i) {
+  const r = getSaved()[i];
+  if (!r) return;
+  detailIndex = i;
+
+  document.getElementById('sEmoji').textContent = r.emoji || '🍽️';
+  document.getElementById('sName').textContent  = r.name;
+  document.getElementById('sDesc').textContent  = r.description;
+
+  document.getElementById('sChips').innerHTML = [
+    r.time      && `<span class="sheet-chip">⏱ ${r.time}</span>`,
+    r.difficulty && `<span class="sheet-chip">👨‍🍳 ${r.difficulty}</span>`,
+    r.servings  && `<span class="sheet-chip">👥 ${r.servings}</span>`,
+    r.calories  && `<span class="sheet-chip">🔥 ${r.calories}</span>`,
+  ].filter(Boolean).join('');
+
+  document.getElementById('sIngs').innerHTML =
+    (r.ingredients || []).map(x => `<span class="ing">${x}</span>`).join('');
+
+  document.getElementById('sSteps').innerHTML =
+    (r.steps || []).map((s, n) => `
+      <div class="step-row">
+        <div class="step-n">${n + 1}</div>
+        <div class="step-t">${s}</div>
+      </div>`).join('');
+
+  document.getElementById('sheetBackdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSheet(evt) {
+  if (evt && evt.target !== document.getElementById('sheetBackdrop') && !evt.target.closest('.sheet-close')) return;
+  document.getElementById('sheetBackdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* ══════════════════════════════════════════════════════════
+   BADGE
+   ══════════════════════════════════════════════════════════ */
+function updateBadge() {
+  const n   = getSaved().length;
+  const el  = document.getElementById('navBadge');
+  el.textContent = n > 0 ? n : '';
+  el.style.opacity = n > 0 ? '1' : '0';
+}
+
+/* ══════════════════════════════════════════════════════════
+   TOAST
+   ══════════════════════════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ══════════════════════════════════════════════════════════
+   INSTALL BANNER
+   ══════════════════════════════════════════════════════════ */
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('visible');
+});
+
+document.getElementById('installBanner').addEventListener('click', async function(e) {
+  if (e.target.classList.contains('install-banner-close')) return;
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    this.classList.remove('visible');
+  }
+});
+
+function dismissInstall(evt) {
+  evt.stopPropagation();
+  document.getElementById('installBanner').classList.remove('visible');
+  deferredPrompt = null;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SPIN ANIMATION
+   ══════════════════════════════════════════════════════════ */
+const style = document.createElement('style');
+style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+document.head.appendChild(style);
+
+/* ══════════════════════════════════════════════════════════
+   SERVICE WORKER
+   ══════════════════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+/* ══════════════════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════════════════ */
+updateBadge();
+
+// Affiche le setup banner si pas de proxy configuré
+if (!PROXY_URL) {
+  document.getElementById('setupBanner').style.display = 'block';
+  document.getElementById('recipeArea').innerHTML = `
+    <div class="error-card">
+      <div class="error-icon">⚙️</div>
+      <div class="error-title">Configuration requise</div>
+      <p class="error-msg">Déployez le Cloudflare Worker et collez son URL dans le code (<code style="background:var(--paper-2);padding:2px 6px;border-radius:4px;font-size:12px;">PROXY_URL</code>) pour activer la génération de recettes.</p>
+    </div>`;
+} else {
+  generateRecipe();
+}
+</script>
+</body>
+</html>
