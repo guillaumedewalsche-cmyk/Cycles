@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D85A30">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chef du Jour">
+<title>Chef du Jour</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1A1410;color:#1A1410;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+input,button{font-family:inherit}
+::-webkit-scrollbar{display:none}
+scrollbar-width:none;
+
+:root{
+  --or:#D85A30;--or-d:#A8401E;--or-bg:#FAECE7;--or-rim:#F5C4B3;--or-gl:rgba(216,90,48,.18);
+  --p:#FAF7F2;--p2:#F2EDE4;--p3:#E8E0D4;
+  --ash:#8A8078;--coal:#3C3028;--ink:#1A1410;
+  --gr:#2E7D32;--gr-bg:#EBF5EC;
+  --nav:58px;
+  --st:env(safe-area-inset-top,0px);
+  --sb:env(safe-area-inset-bottom,0px);
+}
+
+/* SHELL */
+#app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;background:var(--p);overflow:hidden;position:relative}
+
+/* SCREENS */
+.scr{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:none;padding-bottom:calc(var(--nav) + var(--sb) + 12px)}
+.scr.on{display:block}
+
+/* NAV */
+#nav{height:calc(var(--nav) + var(--sb));padding-bottom:var(--sb);background:#1A1410;display:flex;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;position:relative;z-index:50}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:none;background:none;color:#5C5450;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:6px 0;transition:color .15s;position:relative;cursor:pointer}
+.nb.on{color:var(--or)}
+.nb svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;display:block}
+.nbd{position:absolute;top:8px;right:calc(50% - 19px);min-width:16px;height:16px;border-radius:8px;background:var(--or);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;opacity:0;transform:scale(0);transition:all .2s cubic-bezier(.34,1.56,.64,1)}
+.nbd.on{opacity:1;transform:scale(1)}
+
+/* TOAST */
+#toast{position:fixed;bottom:calc(var(--nav) + var(--sb) + 14px);left:50%;transform:translateX(-50%) translateY(18px);background:#1A1410;color:#FAF7F2;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;white-space:nowrap;opacity:0;pointer-events:none;z-index:200;transition:all .26s cubic-bezier(.34,1.56,.64,1);border:1px solid rgba(255,255,255,.08);max-width:88vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* HERO */
+.hero{background:#1A1410;padding:calc(var(--st) + 44px) 18px 26px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-80px;right:-80px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(216,90,48,.14) 0%,transparent 65%);pointer-events:none}
+.hfade{position:absolute;bottom:0;left:0;right:0;height:24px;background:linear-gradient(transparent,var(--p));pointer-events:none}
+.heye{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--or);margin-bottom:8px}
+.htitle{font-size:clamp(24px,6.5vw,32px);font-weight:700;color:#FAF7F2;line-height:1.15;margin-bottom:6px}
+.hsub{font-size:13px;color:#6B6058;line-height:1.5}
+
+/* SEARCH */
+.swrap{padding:14px 14px 0}
+.srow{display:flex;gap:9px;align-items:center}
+.kw{flex:1;padding:11px 15px;border:1.5px solid var(--p3);border-radius:100px;background:#fff;font-size:15px;color:var(--ink);transition:border-color .15s;min-width:0}
+.kw:focus{border-color:var(--or);outline:none}
+.kw::placeholder{color:#B0A8A0}
+.sbtn{width:44px;height:44px;border-radius:50%;background:var(--or);flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px var(--or-gl);transition:transform .15s,box-shadow .15s;border:none;cursor:pointer}
+.sbtn:active{transform:scale(.92);box-shadow:none}
+.sbtn svg{width:18px;height:18px;stroke:#fff;stroke-width:2.4;fill:none;stroke-linecap:round}
+
+/* TAGS */
+.trow{display:flex;gap:7px;padding:10px 14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tag{padding:6px 13px;border-radius:100px;flex-shrink:0;border:1.5px solid var(--p3);background:#fff;font-size:12px;font-weight:600;color:var(--ash);cursor:pointer;transition:all .14s;white-space:nowrap;-webkit-user-select:none;user-select:none}
+.tag.on{border-color:var(--or-rim);background:var(--or-bg);color:var(--or-d)}
+
+/* RECIPE CARD */
+#rArea{padding:12px 14px 0}
+.rc{background:#fff;border-radius:16px;border:1px solid var(--p3);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.rc.in{animation:cIn .3s cubic-bezier(.34,1.15,.64,1) both}
+@keyframes cIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+.cvis{height:160px;background:#1A1410;display:flex;align-items:center;justify-content:center;font-size:68px;position:relative;flex-shrink:0}
+.cvis::after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.42))}
+.cch{position:absolute;bottom:9px;left:11px;right:11px;display:flex;gap:5px;flex-wrap:wrap;z-index:1}
+.cc{padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);font-size:11px;font-weight:600;color:rgba(255,255,255,.92)}
+.cbody{padding:14px}
+.tbadge{display:inline-block;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:700;margin-bottom:8px}
+.te{background:#EBF5EC;color:#1B5E20}
+.tp{background:#E3F2FD;color:#0D47A1}
+.cname{font-size:19px;font-weight:700;color:var(--ink);line-height:1.25;margin-bottom:5px}
+.cdesc{font-size:13px;color:var(--ash);line-height:1.6;margin-bottom:13px}
+.sh{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--or);margin-bottom:7px}
+.ings{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.ing{padding:4px 11px;border-radius:100px;background:var(--p2);border:1px solid var(--p3);font-size:12px;font-weight:500;color:var(--coal)}
+.steps{margin-bottom:14px}
+.step{display:flex;gap:9px;margin-bottom:9px;align-items:flex-start}
+.sn{width:21px;height:21px;border-radius:50%;flex-shrink:0;background:var(--p2);border:1px solid var(--p3);font-size:11px;font-weight:700;color:var(--ash);display:flex;align-items:center;justify-content:center;margin-top:1px}
+.st{font-size:13px;color:var(--coal);line-height:1.6}
+.cacts{display:flex;gap:7px}
+.bsave{flex:1;padding:11px;border-radius:11px;background:var(--or);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 10px var(--or-gl);transition:all .14s;border:none;cursor:pointer}
+.bsave:active{transform:scale(.97);box-shadow:none}
+.bsave.on{background:var(--gr)}
+.bsave svg{width:16px;height:16px;stroke:#fff;stroke-width:2;fill:none;stroke-linecap:round}
+.both{padding:11px 14px;border-radius:11px;border:1.5px solid var(--p3);background:#fff;font-size:13px;font-weight:700;color:var(--ash);display:flex;align-items:center;gap:5px;transition:background .14s;cursor:pointer}
+.both:active{background:var(--p2)}
+.both svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round}
+
+/* EXPLORE */
+.exh{background:#1A1410;padding:calc(var(--st) + 44px) 18px 22px;position:relative;overflow:hidden}
+.exh::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(216,90,48,.12) 0%,transparent 65%);pointer-events:none}
+.exeye{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--or);margin-bottom:7px}
+.extitle{font-size:clamp(24px,6.5vw,32px);font-weight:700;color:#FAF7F2;line-height:1.15}
+.exsub{font-size:13px;color:#6B6058;margin-top:5px}
+.exsearch{padding:12px 14px 0}
+.exinput{width:100%;padding:11px 15px;border:1.5px solid var(--p3);border-radius:100px;background:#fff;font-size:15px;color:var(--ink);transition:border-color .15s}
+.exinput:focus{border-color:var(--or);outline:none}
+.exinput::placeholder{color:#B0A8A0}
+.exfil{display:flex;gap:7px;padding:10px 14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.fc{padding:6px 13px;border-radius:100px;flex-shrink:0;border:1.5px solid var(--p3);background:#fff;font-size:12px;font-weight:600;color:var(--ash);cursor:pointer;transition:all .14s;white-space:nowrap}
+.fc.on{border-color:var(--or-rim);background:var(--or-bg);color:var(--or-d)}
+.excnt{font-size:12px;color:#B0A8A0;padding:7px 18px 2px;font-weight:500}
+.grid{padding:6px 14px 0;display:flex;flex-direction:column;gap:7px}
+.gi{background:#fff;border-radius:13px;border:1px solid var(--p3);display:flex;align-items:stretch;overflow:hidden;box-shadow:0 1px 7px rgba(0,0,0,.06);min-height:68px;cursor:pointer}
+.gi:active{background:var(--p2)}
+.ge{width:62px;background:#1A1410;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.gc{flex:1;padding:10px 10px 10px 13px;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.gn{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.gm{font-size:11px;color:#B0A8A0;margin-bottom:3px}
+.gtags{display:flex;gap:4px;flex-wrap:wrap}
+.gtag{padding:2px 7px;border-radius:100px;background:var(--p2);font-size:10px;font-weight:600;color:var(--ash)}
+.gtag.te{background:#EBF5EC;color:#1B5E20}
+.gtag.tp{background:#E3F2FD;color:#0D47A1}
+.ghrt{width:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.ghrt svg{width:19px;height:19px;stroke:#C4BAB0;fill:none;stroke-width:2;stroke-linecap:round;transition:all .14s}
+.ghrt.on svg{stroke:var(--or);fill:var(--or)}
+
+/* SAVED */
+.svh{background:#1A1410;padding:calc(var(--st) + 44px) 18px 22px;position:relative;overflow:hidden}
+.svh::before{content:'';position:absolute;top:-60px;left:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(216,90,48,.1) 0%,transparent 65%);pointer-events:none}
+.sveye{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--or);margin-bottom:7px}
+.svtitle{font-size:clamp(24px,6.5vw,32px);font-weight:700;color:#FAF7F2;line-height:1.15}
+.svcnt{font-size:13px;color:#6B6058;margin-top:5px}
+.empty{text-align:center;padding:44px 22px;display:flex;flex-direction:column;align-items:center;gap:11px}
+.eico{font-size:46px}
+.etitle{font-size:18px;font-weight:700;color:var(--ink)}
+.esub{font-size:14px;color:var(--ash);line-height:1.6;max-width:240px}
+.svgrid{padding:10px 14px 0;display:flex;flex-direction:column;gap:7px}
+
+/* SHEET */
+#bd{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .26s}
+#bd.on{opacity:1;pointer-events:all}
+#sht{background:var(--p);border-radius:18px 18px 0 0;max-height:91dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;max-width:480px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);padding-bottom:calc(var(--sb) + 8px)}
+#bd.on #sht{transform:translateY(0)}
+.shdl{display:flex;justify-content:center;padding:12px 0 0}
+.shdl span{width:34px;height:4px;border-radius:2px;background:var(--p3);display:block}
+.shhr{background:#1A1410;padding:16px 18px 22px;position:relative;overflow:hidden}
+.shhr::before{content:'';position:absolute;top:-50px;right:-50px;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle,rgba(216,90,48,.12) 0%,transparent 65%);pointer-events:none}
+.shcl{position:absolute;top:13px;right:13px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer}
+.shcl svg{width:15px;height:15px;stroke:rgba(255,255,255,.7);stroke-width:2;fill:none;stroke-linecap:round}
+.she{font-size:46px;margin-bottom:11px;display:block;line-height:1}
+.shn{font-size:22px;font-weight:700;color:#FAF7F2;line-height:1.2;margin-bottom:9px}
+.shchs{display:flex;flex-wrap:wrap;gap:5px}
+.shch{padding:4px 10px;border-radius:100px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);font-size:11px;font-weight:600;color:rgba(255,255,255,.75)}
+.shbody{padding:18px 16px 22px}
+.shdesc{font-size:14px;color:var(--ash);line-height:1.65;margin-bottom:18px}
+.shsv{width:100%;padding:13px;border-radius:13px;background:var(--or);color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 12px var(--or-gl);transition:all .15s;border:none;cursor:pointer}
+.shsv:active{transform:scale(.97)}
+.shsv.on{background:var(--gr);box-shadow:none}
+.shsv svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+
+/* INSTALL BANNER */
+#ib{display:none;align-items:center;gap:10px;margin:10px 14px 0;padding:10px 13px;border-radius:11px;background:#1A1410;color:#FAF7F2}
+#ib.on{display:flex}
+#ib svg{width:17px;height:17px;stroke:var(--or);stroke-width:2;fill:none;flex-shrink:0}
+.ibt{flex:1}.ibtitle{font-size:13px;font-weight:600}.ibsub{font-size:11px;opacity:.6;margin-top:1px}
+.ibx{opacity:.5;font-size:18px;padding:0 4px;line-height:1;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="toast"></div>
+
+<!-- SHEET -->
+<div id="bd" onclick="maybeClose(event)">
+  <div id="sht">
+    <div class="shdl"><span></span></div>
+    <div class="shhr">
+      <button class="shcl" onclick="closeSheet()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <span class="she" id="sE"></span>
+      <div class="shn" id="sN"></div>
+      <div class="shchs" id="sCH"></div>
+    </div>
+    <div class="shbody">
+      <p class="shdesc" id="sD"></p>
+      <div class="sh">Ingrédients</div>
+      <div class="ings" id="sI" style="margin-bottom:16px"></div>
+      <div class="sh">Préparation</div>
+      <div class="steps" id="sS" style="margin-bottom:16px"></div>
+      <button class="shsv" id="shSvBtn" onclick="shSave()">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Sauvegarder
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ACCUEIL -->
+<div id="s0" class="scr on">
+  <div class="hero">
+    <div class="heye" id="hDate">…</div>
+    <div class="htitle">Que mangez-vous<br>aujourd'hui ?</div>
+    <div class="hsub" id="hSub">200 recettes · Fonctionne hors-ligne</div>
+    <div class="hfade"></div>
+  </div>
+  <div id="ib">
+    <svg viewBox="0 0 24 24"><path d="M12 2v13M8 11l4 4 4-4"/><path d="M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>
+    <div class="ibt"><div class="ibtitle">Installer l'app</div><div class="ibsub">Accès rapide depuis l'écran d'accueil</div></div>
+    <span class="ibx" onclick="dismissInstall(event)">✕</span>
+  </div>
+  <div class="swrap">
+    <div class="srow">
+      <input class="kw" id="kwI" type="text" placeholder="Chercher un plat, un ingrédient…" oninput="onKw()">
+      <button class="sbtn" onclick="shuffle()" aria-label="Recette aléatoire">
+        <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="trow" id="hTags">
+    <button class="tag on" onclick="pickTag(this,'')">✨ Tous</button>
+    <button class="tag" onclick="pickTag(this,'Entrée')">🥗 Entrées</button>
+    <button class="tag" onclick="pickTag(this,'Plat')">🍽️ Plats</button>
+    <button class="tag" onclick="pickTag(this,'Végétarien')">🥦 Végétarien</button>
+    <button class="tag" onclick="pickTag(this,'Vegan')">🌿 Vegan</button>
+    <button class="tag" onclick="pickTag(this,'Rapide')">⚡ Rapide</button>
+    <button class="tag" onclick="pickTag(this,'Épicé')">🌶️ Épicé</button>
+    <button class="tag" onclick="pickTag(this,'Français')">🥖 Français</button>
+    <button class="tag" onclick="pickTag(this,'Italien')">🇮🇹 Italien</button>
+    <button class="tag" onclick="pickTag(this,'Asiatique')">🥢 Asiatique</button>
+    <button class="tag" onclick="pickTag(this,'Healthy')">💚 Healthy</button>
+    <button class="tag" onclick="pickTag(this,'Sans gluten')">🌾 Sans gluten</button>
+  </div>
+  <div id="rArea"></div>
+</div>
+
+<!-- EXPLORER -->
+<div id="s1" class="scr">
+  <div class="exh">
+    <div class="exeye">Catalogue</div>
+    <div class="extitle">Explorer</div>
+    <div class="exsub" id="exSub">200 recettes</div>
+  </div>
+  <div class="exsearch">
+    <input class="exinput" id="exI" type="text" placeholder="Rechercher…" oninput="renderEx()">
+  </div>
+  <div class="exfil" id="exFil">
+    <button class="fc on" onclick="pickFil(this,'')">Toutes</button>
+    <button class="fc" onclick="pickFil(this,'Entrée')">🥗 Entrées</button>
+    <button class="fc" onclick="pickFil(this,'Plat')">🍽️ Plats</button>
+    <button class="fc" onclick="pickFil(this,'Végétarien')">🥦 Végétarien</button>
+    <button class="fc" onclick="pickFil(this,'Vegan')">🌿 Vegan</button>
+    <button class="fc" onclick="pickFil(this,'Rapide')">⚡ Rapide</button>
+    <button class="fc" onclick="pickFil(this,'Épicé')">🌶️ Épicé</button>
+    <button class="fc" onclick="pickFil(this,'Français')">🥖 Français</button>
+    <button class="fc" onclick="pickFil(this,'Italien')">🇮🇹 Italien</button>
+    <button class="fc" onclick="pickFil(this,'Asiatique')">🥢 Asiatique</button>
+    <button class="fc" onclick="pickFil(this,'Healthy')">💚 Healthy</button>
+    <button class="fc" onclick="pickFil(this,'Fruits de mer')">🦐 Mer</button>
+  </div>
+  <div class="excnt" id="exCnt"></div>
+  <div class="grid" id="exGrid"></div>
+</div>
+
+<!-- FAVORIS -->
+<div id="s2" class="scr">
+  <div class="svh">
+    <div class="sveye">Mes recettes</div>
+    <div class="svtitle">Favoris</div>
+    <div class="svcnt" id="svCnt">Aucune recette sauvegardée</div>
+  </div>
+  <div id="svCon"></div>
+</div>
+
+<nav id="nav">
+  <button class="nb on" id="nb0" onclick="goS(0)" aria-label="Accueil">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Accueil
+  </button>
+  <button class="nb" id="nb1" onclick="goS(1)" aria-label="Explorer">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Explorer
+  </button>
+  <button class="nb" id="nb2" onclick="goS(2)" aria-label="Favoris">
+    <div class="nbd" id="nbd"></div>
+    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Favoris
+  </button>
+</nav>
+</div>
+
+<script>
+/* ══════════════════════════
+   BASE DE RECETTES — 200
+   ══════════════════════════ */
+const R=[
+// ── ENTRÉES (80) ──
+{id:1,t:"Entrée",e:"🥗",n:"Salade niçoise",g:["Entrée","Français","Healthy","Sans gluten"],tm:"15 min",df:"Facile",sv:"4",cl:"280 kcal",d:"La grande salade provençale avec thon, anchois, œufs durs et olives noires.",i:["200g thon","4 œufs durs","150g haricots verts","4 tomates","1 poivron","100g olives noires","8 anchois","Laitue","Huile d'olive","Vinaigre"],s:["Cuire les haricots verts al dente. Rafraîchir.","Faire durcir les œufs 10 min. Écaler, couper en 2.","Trancher tomates et poivron.","Disposer la laitue et tous les ingrédients harmonieusement.","Assaisonner d'huile d'olive, vinaigre, sel et poivre."]},
+{id:2,t:"Entrée",e:"🧆",n:"Falafels croustillants",g:["Entrée","Vegan","Végétarien","Moyen-Orient","Épicé"],tm:"25 min",df:"Facile",sv:"4",cl:"300 kcal",d:"Des boulettes de pois chiches croquantes aux herbes et épices orientales, servies avec sauce tahini.",i:["400g pois chiches cuits","1 oignon","3 gousses d'ail","Persil et coriandre","1 c.c. cumin","Piment","Farine","Huile de friture"],s:["Mixer pois chiches, oignon, ail, herbes et épices. Texture granuleuse.","Ajouter un peu de farine pour lier. Former des boulettes.","Réfrigérer 20 min.","Frire à 180°C pendant 4 min ou four 200°C 25 min.","Servir avec sauce tahini, citron et pain pita."]},
+{id:3,t:"Entrée",e:"🍅",n:"Gaspacho andalou",g:["Entrée","Vegan","Végétarien","Espagnol","Healthy","Été"],tm:"15 min",df:"Facile",sv:"4",cl:"140 kcal",d:"La soupe froide espagnole par excellence, fraîche et vitaminée.",i:["1kg tomates mûres","1 concombre","1 poivron rouge","1 gousse d'ail","1 tranche pain rassis","4 c.s. huile d'olive","2 c.s. vinaigre Xérès","Sel"],s:["Tremper le pain dans l'eau froide 5 min.","Peler et épépiner les tomates.","Mixer tous les légumes avec le pain essoré.","Ajouter huile et vinaigre. Mixer finement.","Réfrigérer au moins 2h. Servir très frais."]},
+{id:4,t:"Entrée",e:"🥚",n:"Œufs mayonnaise",g:["Entrée","Français","Rapide","Végétarien"],tm:"15 min",df:"Facile",sv:"4",cl:"320 kcal",d:"Le grand classique du bistrot : œufs durs nappés de mayonnaise maison.",i:["8 œufs","2 jaunes d'œufs","200ml huile","1 c.c. moutarde","1 c.s. vinaigre","Sel, poivre","Paprika"],s:["Faire durcir les œufs 10 min. Écaler, couper en 2.","Mayonnaise : battre jaunes + moutarde. Incorporer l'huile en filet.","Assaisonner avec vinaigre, sel, poivre.","Napper chaque demi-œuf de mayonnaise.","Saupoudrer de paprika."]},
+{id:5,t:"Entrée",e:"🦐",n:"Crevettes cocktail",g:["Entrée","Rapide","Français","Fruits de mer"],tm:"10 min",df:"Facile",sv:"4",cl:"220 kcal",d:"Des crevettes roses sur lit de salade avec une sauce cocktail acidulée.",i:["400g crevettes cuites","Laitue iceberg","2 c.s. ketchup","3 c.s. mayonnaise","Tabasco","Citron","Paprika"],s:["Effeuiller la laitue dans les coupes.","Mélanger ketchup, mayo, Tabasco.","Ajouter le jus de citron.","Disposer les crevettes sur la laitue.","Napper de sauce, saupoudrer de paprika."]},
+{id:6,t:"Entrée",e:"🍋",n:"Carpaccio de saumon",g:["Entrée","Français","Healthy","Sans gluten"],tm:"20 min",df:"Facile",sv:"4",cl:"220 kcal",d:"Fines tranches de saumon cru marinées au citron et à l'aneth.",i:["400g filet saumon frais","2 citrons","Aneth frais","Câpres","Oignon rouge","Huile d'olive","Sel, poivre"],s:["Congeler le saumon 2h pour faciliter la découpe.","Trancher très finement.","Disposer en cercle sur les assiettes.","Arroser de jus de citron et d'huile.","Parsemer d'aneth, câpres et oignon rouge."]},
+{id:7,t:"Entrée",e:"🫙",n:"Houmous maison",g:["Entrée","Vegan","Végétarien","Healthy","Moyen-Orient"],tm:"15 min",df:"Facile",sv:"6",cl:"180 kcal",d:"Un houmous crémeux au tahini et au citron, bien meilleur que celui du commerce.",i:["400g pois chiches cuits","4 c.s. tahini","2 citrons","2 gousses d'ail","5 c.s. huile d'olive","½ c.c. cumin","Eau glacée","Paprika"],s:["Mixer tahini et jus de citron 1 min.","Ajouter l'ail et le sel. Mixer.","Incorporer les pois chiches. Mixer longuement.","Ajouter l'eau glacée cuillère par cuillère.","Servir avec paprika et huile d'olive."]},
+{id:8,t:"Entrée",e:"🥑",n:"Guacamole frais",g:["Entrée","Vegan","Végétarien","Mexicain","Rapide"],tm:"10 min",df:"Facile",sv:"4",cl:"180 kcal",d:"Un guacamole authentique avec avocats mûrs, citron vert, piment et coriandre.",i:["3 avocats mûrs","2 citrons verts","1 piment vert","½ oignon rouge","2 tomates","Coriandre fraîche","Sel"],s:["Écraser les avocats grossièrement à la fourchette.","Presser les citrons verts immédiatement.","Hacher piment, oignon, tomates et coriandre.","Mélanger et assaisonner.","Servir avec chips de tortilla."]},
+{id:9,t:"Entrée",e:"🫓",n:"Bruschetta tomate-basilic",g:["Entrée","Végétarien","Italien","Rapide"],tm:"10 min",df:"Facile",sv:"4",cl:"200 kcal",d:"Bruschetta romaine avec tomates fraîches marinées au basilic sur pain grillé frotté à l'ail.",i:["1 baguette","4 tomates mûres","2 gousses d'ail","Basilic frais","4 c.s. huile d'olive","Sel, poivre"],s:["Griller les tranches de baguette.","Frotter avec l'ail coupé.","Couper les tomates en dés. Mélanger avec le basilic.","Assaisonner avec huile, sel, poivre.","Répartir sur les toasts."]},
+{id:10,t:"Entrée",e:"🥒",n:"Tzatziki grec",g:["Entrée","Végétarien","Grec","Rapide"],tm:"10 min",df:"Facile",sv:"4",cl:"130 kcal",d:"La sauce grecque fraîche au yaourt, concombre et aneth, incontournable.",i:["500g yaourt grec","1 concombre","2 gousses d'ail","Aneth frais","2 c.s. huile d'olive","1 c.s. vinaigre blanc","Sel"],s:["Râper le concombre, saler et égoutter 15 min.","Presser pour éliminer l'eau.","Mélanger yaourt, concombre, ail pressé, aneth.","Ajouter huile et vinaigre. Assaisonner.","Réfrigérer 30 min. Servir avec pita."]},
+{id:11,t:"Entrée",e:"🍲",n:"Soupe à l'oignon gratinée",g:["Entrée","Français","Végétarien"],tm:"70 min",df:"Facile",sv:"4",cl:"360 kcal",d:"La soupe parisienne emblématique : oignons caramélisés, bouillon parfumé, gruyère gratiné.",i:["1kg oignons","1.5L bouillon de bœuf","200ml vin blanc","8 tranches baguette","200g gruyère râpé","2 c.s. beurre","Thym","Laurier"],s:["Émincer les oignons. Faire fondre 40 min dans le beurre jusqu'à caramélisation.","Déglacer au vin blanc. Laisser réduire.","Ajouter le bouillon, thym, laurier. Cuire 15 min.","Verser dans des bols. Déposer le pain, recouvrir de gruyère.","Gratiner sous le gril 5 min."]},
+{id:12,t:"Entrée",e:"🥣",n:"Velouté de butternut",g:["Entrée","Vegan","Végétarien","Healthy","Automne"],tm:"40 min",df:"Facile",sv:"4",cl:"200 kcal",d:"Un velouté soyeux à la courge butternut, parfumé au gingembre et à la muscade.",i:["1 butternut (1kg)","1 oignon","2 gousses d'ail","Gingembre frais","800ml bouillon légumes","200ml lait de coco","Muscade","Huile d'olive"],s:["Éplucher et couper la butternut en cubes.","Faire revenir oignon et ail dans l'huile 5 min.","Ajouter butternut, gingembre et bouillon. Couvrir. Cuire 25 min.","Mixer avec le lait de coco.","Assaisonner avec muscade, sel, poivre."]},
+{id:13,t:"Entrée",e:"🐟",n:"Tartare de saumon",g:["Entrée","Français","Healthy","Sans gluten"],tm:"20 min",df:"Facile",sv:"4",cl:"240 kcal",d:"Un tartare de saumon frais et délicat, assaisonné à l'échalote, câpres et citron.",i:["400g saumon très frais","2 échalotes","2 c.s. câpres","1 citron","Aneth","2 c.s. huile d'olive","Sel, poivre"],s:["Couper le saumon en petits dés au couteau.","Hacher finement les échalotes et les câpres.","Mélanger délicatement avec le saumon.","Assaisonner avec jus de citron, huile, sel.","Dresser à l'aide d'un cercle. Garnir d'aneth."]},
+{id:14,t:"Entrée",e:"🥗",n:"Salade César",g:["Entrée","Américain","Rapide"],tm:"15 min",df:"Facile",sv:"2",cl:"380 kcal",d:"La salade César avec sa sauce crémeuse à l'anchois, croûtons dorés et parmesan.",i:["1 romaine","100g parmesan","2 tranches pain","4 anchois","1 citron","1 c.c. moutarde","2 c.s. mayonnaise","Huile d'olive"],s:["Couper le pain en dés et griller à l'ail.","Sauce : mixer anchois, moutarde, mayo, citron et huile.","Effeuiller et couper grossièrement la romaine.","Mélanger avec la sauce.","Ajouter croûtons et copeaux de parmesan."]},
+{id:15,t:"Entrée",e:"🫕",n:"Soupe minestrone",g:["Entrée","Vegan","Végétarien","Italien","Healthy"],tm:"45 min",df:"Facile",sv:"6",cl:"220 kcal",d:"Le minestrone généreux aux légumes de saison, haricots et petites pâtes.",i:["2 courgettes","2 carottes","1 céleri","1 oignon","400g haricots cannellini","400g tomates","100g petites pâtes","Parmesan","Basilic"],s:["Couper tous les légumes en dés.","Faire revenir oignon, carotte, céleri dans l'huile.","Ajouter courgettes, tomates et 1.5L d'eau.","Incorporer haricots et pâtes. Cuire 15 min.","Servir avec parmesan et un filet d'huile."]},
+{id:16,t:"Entrée",e:"🥗",n:"Taboulé libanais",g:["Entrée","Vegan","Végétarien","Libanais","Healthy"],tm:"20 min",df:"Facile",sv:"4",cl:"180 kcal",d:"Le vrai taboulé libanais très en herbes, peu en boulgour, frais et citronné.",i:["1 bouquet persil plat","½ bouquet menthe","3 tomates","1 oignon vert","50g boulgour fin","3 citrons","5 c.s. huile d'olive"],s:["Hydrater le boulgour avec jus d'un citron 15 min.","Hacher finement persil et menthe.","Couper les tomates en tout petits dés.","Mélanger tous les ingrédients.","Assaisonner généreusement. Réfrigérer 30 min."]},
+{id:17,t:"Entrée",e:"🍜",n:"Soupe pho aux légumes",g:["Entrée","Vegan","Végétarien","Asiatique","Healthy","Sans gluten"],tm:"50 min",df:"Facile",sv:"4",cl:"260 kcal",d:"Version végétarienne du pho vietnamien, bouillon épicé aux étoiles d'anis.",i:["1.5L bouillon légumes","2 anis étoilés","1 bâton cannelle","200g nouilles de riz","Carotte","Pak-choï","Champignons","Sauce soja","Basilic thaï","Citron vert"],s:["Infuser les épices dans le bouillon 20 min.","Filtrer. Assaisonner avec sauce soja.","Cuire les nouilles.","Blanchir les légumes dans le bouillon.","Servir avec herbes fraîches et citron vert."]},
+{id:18,t:"Entrée",e:"🥗",n:"Salade grecque",g:["Entrée","Végétarien","Grec","Healthy","Rapide","Sans gluten"],tm:"10 min",df:"Facile",sv:"2",cl:"260 kcal",d:"La salade grecque colorée : tomates, concombre, feta, olives kalamata et origan.",i:["2 tomates","1 concombre","100g feta","50g olives kalamata","1 oignon rouge","Origan séché","Huile d'olive"],s:["Couper tomates en quartiers et concombre en rondelles.","Émincer l'oignon rouge finement.","Disposer dans un plat.","Ajouter feta en gros morceaux et olives.","Saupoudrer d'origan. Arroser d'huile d'olive."]},
+{id:19,t:"Entrée",e:"🫙",n:"Soupe de lentilles corail",g:["Entrée","Vegan","Végétarien","Indien","Healthy","Sans gluten"],tm:"30 min",df:"Facile",sv:"4",cl:"260 kcal",d:"Soupe veloutée de lentilles corail aux épices indiennes et lait de coco.",i:["300g lentilles corail","1 oignon","3 gousses d'ail","400ml lait de coco","1 boîte tomates","Curry","Curcuma","Cumin","Coriandre fraîche"],s:["Rincer les lentilles.","Faire revenir oignon, ail dans l'huile.","Ajouter épices, lentilles, tomates et 500ml d'eau. Cuire 15 min.","Ajouter le lait de coco. Cuire 10 min.","Servir avec coriandre fraîche."]},
+{id:20,t:"Entrée",e:"🥗",n:"Salade de chèvre chaud",g:["Entrée","Végétarien","Français"],tm:"15 min",df:"Facile",sv:"2",cl:"380 kcal",d:"Le classique : chèvre chaud croustillant sur toast avec noix et miel.",i:["1 bûche de chèvre","4 tranches pain de campagne","Mélange de salades","50g noix","2 c.s. miel","Vinaigrette","Thym"],s:["Couper le chèvre en rondelles. Déposer sur les toasts.","Arroser de miel et saupoudrer de thym.","Passer au four 5 min à 200°C.","Dresser les salades dans les assiettes.","Déposer les toasts chauds et les noix."]},
+{id:21,t:"Entrée",e:"🍣",n:"Tartare de thon au sésame",g:["Entrée","Asiatique","Healthy","Sans gluten"],tm:"15 min",df:"Facile",sv:"4",cl:"220 kcal",d:"Tartare de thon rouge frais mariné au soja et sésame dans l'esprit japonais.",i:["400g thon rouge frais","2 c.s. sauce soja","1 c.s. huile sésame","1 c.s. gingembre râpé","1 avocat","Sésame grillé","Ciboulette","Citron"],s:["Couper le thon en petits cubes.","Mélanger soja, huile de sésame et gingembre.","Mariner le thon 5 min.","Dresser avec l'avocat en dés.","Parsemer de sésame grillé et ciboulette."]},
+{id:22,t:"Entrée",e:"🫕",n:"Velouté de poireaux",g:["Entrée","Végétarien","Français"],tm:"35 min",df:"Facile",sv:"4",cl:"190 kcal",d:"Un velouté doux et crémeux aux poireaux, légèrement parfumé à la muscade.",i:["4 poireaux","1 pomme de terre","1 oignon","800ml bouillon légumes","150ml crème fraîche","Beurre","Muscade"],s:["Émincer les poireaux et l'oignon. Faire suer dans le beurre.","Ajouter la pomme de terre en cubes et le bouillon.","Cuire 25 min.","Mixer finement avec la crème.","Assaisonner avec muscade, sel, poivre."]},
+{id:23,t:"Entrée",e:"🐚",n:"Moules marinières",g:["Entrée","Français","Fruits de mer","Rapide"],tm:"20 min",df:"Facile",sv:"4",cl:"200 kcal",d:"Les moules marinières classiques dans leur bouillon parfumé au vin blanc.",i:["2kg moules","3 échalotes","2 gousses d'ail","200ml vin blanc","50g beurre","Persil plat","Thym","Laurier"],s:["Nettoyer et gratter les moules.","Faire revenir échalotes et ail dans le beurre.","Ajouter vin blanc, thym et laurier.","Verser les moules. Couvrir et cuire 5 min en secouant.","Parsemer de persil. Servir immédiatement."]},
+{id:24,t:"Entrée",e:"🥗",n:"Betteraves à la crème de chèvre",g:["Entrée","Végétarien","Français"],tm:"15 min",df:"Facile",sv:"4",cl:"220 kcal",d:"Betteraves rôties sur un lit de crème de chèvre fouettée avec noix et miel.",i:["4 betteraves cuites","150g chèvre frais","100ml crème fraîche","50g noix","2 c.s. miel","Roquette","Huile d'olive"],s:["Fouetter le chèvre avec la crème. Assaisonner.","Trancher les betteraves.","Toaster les noix à sec.","Étaler la crème de chèvre dans les assiettes.","Disposer les betteraves, roquette, noix et miel."]},
+{id:25,t:"Entrée",e:"🐟",n:"Blinis au saumon fumé",g:["Entrée","Français"],tm:"20 min",df:"Facile",sv:"4",cl:"300 kcal",d:"Petits blinis moelleux garnis de crème fraîche, saumon fumé et aneth.",i:["150g farine sarrasin","150ml lait","2 œufs","1 c.c. levure","150g saumon fumé","Crème fraîche épaisse","Aneth frais","Citron"],s:["Mélanger farine, levure, jaunes et lait. Laisser reposer 30 min.","Monter les blancs. Incorporer à la pâte.","Cuire des petits blinis dans une poêle beurrée.","Garnir chaque blini de crème fraîche et saumon.","Décorer d'aneth et d'un zeste de citron."]},
+{id:26,t:"Entrée",e:"🫕",n:"Velouté de champignons",g:["Entrée","Végétarien","Français"],tm:"35 min",df:"Facile",sv:"4",cl:"220 kcal",d:"Un velouté soyeux de champignons de Paris, parfumé au thym.",i:["600g champignons","1 oignon","2 gousses d'ail","700ml bouillon","200ml crème fraîche","Thym frais","Beurre"],s:["Faire revenir oignon et ail dans le beurre.","Ajouter les champignons. Cuire 10 min.","Verser le bouillon et le thym. Cuire 15 min.","Mixer avec la crème.","Assaisonner. Servir avec un filet de crème."]},
+{id:27,t:"Entrée",e:"🥗",n:"Salade de choux asiatique",g:["Entrée","Vegan","Végétarien","Asiatique","Healthy"],tm:"15 min",df:"Facile",sv:"4",cl:"160 kcal",d:"Salade de chou croquante aux saveurs asiatiques avec sauce sésame et gingembre.",i:["½ chou blanc","2 carottes","Oignons verts","Graines de sésame","3 c.s. sauce soja","2 c.s. huile sésame","1 c.s. gingembre râpé","Piment"],s:["Émincer finement le chou et râper les carottes.","Mélanger sauce soja, huile de sésame, gingembre.","Verser sur les légumes. Bien mélanger.","Laisser mariner 15 min.","Parsemer de sésame et oignons verts."]},
+{id:28,t:"Entrée",e:"🥚",n:"Gougères au fromage",g:["Entrée","Végétarien","Français"],tm:"35 min",df:"Moyen",sv:"6",cl:"280 kcal",d:"Les petits choux au fromage bourguignons, légers et dorés.",i:["250ml eau","80g beurre","150g farine","4 œufs","100g gruyère râpé","Sel","Muscade"],s:["Porter eau, beurre et sel à ébullition.","Incorporer la farine en une fois. Dessécher la pâte.","Ajouter les œufs un par un.","Incorporer le gruyère.","Dresser des petites boules. Cuire 25 min à 200°C."]},
+{id:29,t:"Entrée",e:"🫕",n:"Crème de petits pois à la menthe",g:["Entrée","Végétarien","Healthy","Rapide"],tm:"20 min",df:"Facile",sv:"4",cl:"180 kcal",d:"Une crème verte et fraîche de petits pois parfumée à la menthe.",i:["600g petits pois surgelés","1 oignon","700ml bouillon légumes","Menthe fraîche","100ml crème fraîche","Beurre"],s:["Faire suer l'oignon dans le beurre.","Ajouter les petits pois et le bouillon. Cuire 8 min.","Mixer finement avec la menthe et la crème.","Passer au tamis pour texture soyeuse.","Assaisonner. Servir avec feuilles de menthe."]},
+{id:30,t:"Entrée",e:"🦪",n:"Vitello tonnato",g:["Entrée","Italien"],tm:"30 min",df:"Moyen",sv:"6",cl:"340 kcal",d:"Le classique milanais : fines tranches de veau nappées de sauce crémeuse au thon.",i:["600g quasi de veau cuit","200g thon en boîte","3 c.s. câpres","3 c.s. mayonnaise","2 c.s. jus de citron","Anchois"],s:["Trancher finement le veau cuit et refroidi.","Mixer thon, mayonnaise, câpres, anchois et citron.","Détendre la sauce avec un peu d'eau.","Napper les tranches de veau de sauce.","Décorer de câpres et tranches de citron."]},
+{id:31,t:"Entrée",e:"🥗",n:"Salade de quinoa aux légumes",g:["Entrée","Vegan","Végétarien","Healthy","Sans gluten"],tm:"25 min",df:"Facile",sv:"4",cl:"300 kcal",d:"Salade complète de quinoa colorée avec légumes grillés et vinaigrette au citron.",i:["200g quinoa","1 poivron rouge","1 courgette","Tomates cerises","Roquette","Citron","Huile d'olive"],s:["Cuire le quinoa. Refroidir.","Couper les légumes. Griller à la poêle ou au four.","Préparer une vinaigrette citron-huile.","Mélanger quinoa, légumes et roquette.","Assaisonner et servir frais."]},
+{id:32,t:"Entrée",e:"🫕",n:"Soupe de tomates rôties",g:["Entrée","Vegan","Végétarien","Français","Été"],tm:"50 min",df:"Facile",sv:"4",cl:"160 kcal",d:"Soupe intensément parfumée de tomates rôties au four avec ail confit et basilic.",i:["1.2kg tomates","6 gousses d'ail","1 oignon","400ml bouillon","Basilic","3 c.s. huile d'olive","Sucre"],s:["Couper les tomates en 2. Disposer avec ail et oignon.","Arroser d'huile, saupoudrer de sucre. Rôtir 40 min à 180°C.","Récupérer les tomates avec leurs jus.","Mixer avec le bouillon.","Passer au tamis. Assaisonner. Garnir de basilic."]},
+{id:33,t:"Entrée",e:"🥗",n:"Salade piémontaise",g:["Entrée","Français"],tm:"20 min",df:"Facile",sv:"4",cl:"340 kcal",d:"La généreuse salade piémontaise avec pommes de terre, jambon, cornichons et mayo.",i:["600g pommes de terre","200g jambon","4 œufs durs","100g cornichons","1 poivron rouge","Mayonnaise","Moutarde"],s:["Cuire les pommes de terre en cubes. Refroidir.","Couper jambon, cornichons et poivron en dés.","Écaler et hacher grossièrement les œufs.","Mélanger tout avec la mayonnaise moutardée.","Assaisonner et réfrigérer 30 min."]},
+{id:34,t:"Entrée",e:"🫕",n:"Velouté de carottes au gingembre",g:["Entrée","Vegan","Végétarien","Healthy","Sans gluten"],tm:"35 min",df:"Facile",sv:"4",cl:"160 kcal",d:"Soupe veloutée et ensoleillée de carottes parfumée au gingembre et curcuma.",i:["800g carottes","1 oignon","3cm gingembre","1 c.c. curcuma","800ml bouillon légumes","200ml lait de coco"],s:["Faire revenir oignon et gingembre dans l'huile.","Ajouter carottes, curcuma et bouillon.","Cuire 25 min.","Mixer avec le lait de coco.","Assaisonner. Servir avec des graines de courge."]},
+{id:35,t:"Entrée",e:"🥗",n:"Salade caprese",g:["Entrée","Végétarien","Italien","Rapide","Sans gluten"],tm:"5 min",df:"Facile",sv:"4",cl:"260 kcal",d:"La simplicité italienne : tomates, mozzarella di bufala et basilic frais.",i:["4 tomates","200g mozzarella di bufala","Basilic frais","Huile d'olive extra","Fleur de sel","Poivre","Balsamique"],s:["Trancher tomates et mozzarella.","Alterner les tranches dans l'assiette.","Glisser des feuilles de basilic.","Arroser généreusement d'huile d'olive.","Assaisonner et ajouter un filet de balsamique."]},
+{id:36,t:"Entrée",e:"🫕",n:"Vichyssoise",g:["Entrée","Végétarien","Français","Été"],tm:"40 min",df:"Facile",sv:"4",cl:"200 kcal",d:"La soupe froide de poireaux et pommes de terre, veloutée et rafraîchissante.",i:["4 poireaux","3 pommes de terre","1 oignon","800ml bouillon légumes","200ml crème fraîche","Beurre","Ciboulette"],s:["Faire suer poireaux et oignon dans le beurre.","Ajouter pommes de terre et bouillon. Cuire 25 min.","Mixer finement. Incorporer la crème.","Refroidir complètement.","Servir très froid avec ciboulette ciselée."]},
+{id:37,t:"Entrée",e:"🥗",n:"Salade de melon et jambon",g:["Entrée","Français","Rapide","Sans gluten"],tm:"10 min",df:"Facile",sv:"4",cl:"240 kcal",d:"L'alliance classique du melon sucré et du jambon de Parme salé.",i:["1 melon Charentais","8 tranches jambon de Parme","Roquette","Basilic","Huile d'olive","Poivre"],s:["Couper le melon en tranches.","Disposer sur les assiettes avec la roquette.","Draper les tranches de jambon de Parme.","Garnir de basilic.","Arroser d'un filet d'huile d'olive et poivrer."]},
+{id:38,t:"Entrée",e:"🥗",n:"Salade de figues au jambon",g:["Entrée","Français","Rapide"],tm:"10 min",df:"Facile",sv:"4",cl:"280 kcal",d:"Figues fraîches et jambon cru sur roquette avec noix et miel.",i:["8 figues fraîches","8 tranches jambon cru","Roquette","50g noix","2 c.s. miel","Vinaigre balsamique","Huile d'olive"],s:["Couper les figues en quatre.","Effeuiller la roquette dans les assiettes.","Déposer les figues et le jambon cru.","Parsemer de noix.","Arroser de miel, balsamique et huile d'olive."]},
+{id:39,t:"Entrée",e:"🥗",n:"Salade de magret fumé",g:["Entrée","Français"],tm:"15 min",df:"Facile",sv:"4",cl:"360 kcal",d:"Salade aux saveurs du Sud-Ouest avec magret fumé, gésiers confits et noisettes.",i:["200g magret fumé tranché","100g gésiers confits","Mesclun","50g noisettes","Tomates cerises","Vinaigrette au miel"],s:["Chauffer les gésiers à la poêle.","Toaster les noisettes à sec.","Disposer le mesclun dans les assiettes.","Ajouter magret, gésiers et tomates cerises.","Parsemer de noisettes. Assaisonner."]},
+{id:40,t:"Entrée",e:"🍜",n:"Soupe wonton",g:["Entrée","Asiatique","Chinois"],tm:"30 min",df:"Moyen",sv:"4",cl:"300 kcal",d:"Des raviolis chinois farcis au porc dans un bouillon clair parfumé au gingembre.",i:["24 wontons frais","1.5L bouillon de porc","3cm gingembre","2 c.s. sauce soja","Huile de sésame","Oignons verts","Bok choy"],s:["Chauffer le bouillon avec gingembre et sauce soja.","Cuire les wontons dans l'eau bouillante 5 min.","Ajouter le bok choy au bouillon.","Répartir les wontons dans les bols.","Verser le bouillon. Garnir d'huile de sésame et oignons verts."]},
+{id:41,t:"Entrée",e:"🥗",n:"Crudités sauce tapenade",g:["Entrée","Vegan","Végétarien","Français","Rapide"],tm:"10 min",df:"Facile",sv:"4",cl:"180 kcal",d:"Assortiment de crudités colorées avec une tapenade noire maison.",i:["Carottes","Concombre","Radis","Poivrons","Céleri","200g olives noires","2 c.s. câpres","2 gousses d'ail","4 c.s. huile d'olive","Anchois"],s:["Couper les légumes en bâtonnets.","Mixer olives, câpres, ail, anchois et huile.","Assaisonner la tapenade.","Dresser les légumes joliment.","Servir avec la tapenade."]},
+{id:42,t:"Entrée",e:"🥗",n:"Salade feta pastèque",g:["Entrée","Végétarien","Grec","Été","Sans gluten"],tm:"10 min",df:"Facile",sv:"4",cl:"200 kcal",d:"L'alliance rafraîchissante pastèque-feta-menthe, un classique estival.",i:["½ pastèque","200g feta","Menthe fraîche","Olives kalamata","Roquette","Huile d'olive","Poivre"],s:["Couper la pastèque en cubes.","Disposer sur les assiettes avec la roquette.","Émietter la feta.","Ajouter les olives et la menthe.","Arroser d'huile d'olive et poivrer."]},
+{id:43,t:"Entrée",e:"🥗",n:"Salade de céleri rémoulade",g:["Entrée","Végétarien","Français"],tm:"15 min",df:"Facile",sv:"4",cl:"220 kcal",d:"Le céleri rémoulade classique à la sauce moutardée crémeuse, incontournable du bistrot.",i:["1 céleri-rave","3 c.s. mayonnaise","1 c.s. moutarde de Dijon","1 c.s. vinaigre","Jus de citron","Sel, poivre"],s:["Éplucher et râper le céleri finement.","Citronner immédiatement.","Mélanger mayonnaise, moutarde et vinaigre.","Mélanger sauce et céleri.","Assaisonner. Laisser mariner 30 min."]},
+{id:44,t:"Entrée",e:"🫕",n:"Soupe de pois cassés au lard",g:["Entrée","Français"],tm:"60 min",df:"Facile",sv:"6",cl:"300 kcal",d:"Une soupe épaisse et réconfortante de pois cassés avec des lardons fumés.",i:["400g pois cassés","200g lardons","2 carottes","1 oignon","2 gousses d'ail","Bouquet garni"],s:["Rincer les pois cassés.","Faire revenir lardons, oignon et carottes.","Ajouter pois cassés, ail, bouquet garni et eau.","Porter à ébullition. Mijoter 50 min.","Mixer partiellement. Assaisonner."]},
+{id:45,t:"Entrée",e:"🦑",n:"Calamars à la plancha",g:["Entrée","Espagnol","Rapide","Sans gluten"],tm:"15 min",df:"Facile",sv:"2",cl:"220 kcal",d:"Des calamars tendres saisis à la plancha avec ail, persil et citron.",i:["500g calamars","3 gousses d'ail","Persil plat","1 citron","Huile d'olive","Piment d'Espelette"],s:["Inciser les calamars.","Préparer la vinaigrette ail-persil-citron.","Faire chauffer la plancha à feu très vif.","Saisir 1-2 min par face avec huile.","Assaisonner et arroser de vinaigrette."]},
+{id:46,t:"Entrée",e:"🥗",n:"Salade de poulpe galicienne",g:["Entrée","Espagnol","Sans gluten"],tm:"90 min",df:"Moyen",sv:"4",cl:"240 kcal",d:"Le pulpo a la gallega avec poulpe tendre, pommes de terre et paprika fumé.",i:["1 poulpe (1.2kg)","4 pommes de terre","Paprika fumé","Huile d'olive","Fleur de sel","Laurier"],s:["Plonger le poulpe 3 fois dans l'eau bouillante puis cuire 45 min.","Cuire les pommes de terre dans l'eau du poulpe.","Couper le poulpe en rondelles.","Disposer pommes de terre et poulpe.","Arroser d'huile d'olive et saupoudrer de paprika."]},
+{id:47,t:"Entrée",e:"🥗",n:"Miso soup traditionnelle",g:["Entrée","Vegan","Japonais","Healthy","Rapide","Sans gluten"],tm:"10 min",df:"Facile",sv:"4",cl:"80 kcal",d:"La soupe miso japonaise avec tofu soyeux et algues wakame.",i:["4 c.s. pâte miso","1L eau","150g tofu soyeux","10g algues wakame","2 oignons verts","Dashi"],s:["Porter l'eau à frémissement avec le dashi.","Hydrater les algues wakame.","Délayer la pâte miso dans une louche de bouillon chaud.","Incorporer au bouillon hors du feu.","Ajouter tofu en dés, algues et oignons verts."]},
+{id:48,t:"Entrée",e:"🥗",n:"Salade de carottes râpées",g:["Entrée","Vegan","Végétarien","Français","Healthy","Rapide"],tm:"10 min",df:"Facile",sv:"4",cl:"140 kcal",d:"La classique salade de carottes râpées à la vinaigrette orange-cumin.",i:["600g carottes","Jus d'orange","3 c.s. huile d'olive","1 c.s. vinaigre","Cumin","Persil","Sel, poivre"],s:["Éplucher et râper les carottes.","Préparer vinaigrette : jus d'orange, huile, vinaigre, cumin.","Mélanger avec les carottes.","Assaisonner.","Parsemer de persil. Mariner 30 min."]},
+{id:49,t:"Entrée",e:"🥗",n:"Salade d'endives noix bleu",g:["Entrée","Végétarien","Français"],tm:"10 min",df:"Facile",sv:"4",cl:"300 kcal",d:"L'alliance classique des endives croquantes, des noix et du fromage bleu.",i:["4 endives","100g bleu d'Auvergne","80g noix","1 poire","Vinaigre","Huile de noix"],s:["Séparer les feuilles d'endive.","Couper la poire en fines lamelles.","Émietter le bleu.","Disposer dans les assiettes avec les noix.","Assaisonner à l'huile de noix et vinaigre."]},
+{id:50,t:"Entrée",e:"🥗",n:"Antipasti variés",g:["Entrée","Végétarien","Italien","Rapide"],tm:"15 min",df:"Facile",sv:"4",cl:"300 kcal",d:"Assortiment d'antipasti italiens : légumes marinés, mozzarella, charcuteries.",i:["Mozzarella","Tomates séchées","Olives","Artichauts marinés","Poivrons grillés","Jambon cru","Bresaola","Huile d'olive"],s:["Dresser les légumes marinés sur un plateau.","Disposer la mozzarella en tranches.","Ajouter les charcuteries.","Arroser d'huile d'olive.","Servir avec du pain ciabatta grillé."]},
+{id:51,t:"Entrée",e:"🥗",n:"Salade de bœuf thaïe",g:["Entrée","Asiatique","Épicé","Sans gluten"],tm:"20 min",df:"Facile",sv:"4",cl:"280 kcal",d:"Salade thaïe de bœuf grillé avec herbes fraîches et sauce nuoc-mâm citronnée.",i:["400g filet de bœuf","Salade verte","Concombre","Tomates cerises","Coriandre","Menthe","Sauce nuoc-mâm","Citron vert","Piment","Sucre"],s:["Saisir le bœuf à feu très vif. Laisser reposer.","Trancher finement contre le fil.","Préparer sauce : nuoc-mâm, citron, piment, sucre.","Mélanger avec herbes et légumes.","Ajouter le bœuf. Servir immédiatement."]},
+{id:52,t:"Entrée",e:"🍲",n:"Soupe de poisson maison",g:["Entrée","Français","Fruits de mer"],tm:"60 min",df:"Moyen",sv:"6",cl:"280 kcal",d:"Une soupe de poisson marseillaise parfumée avec sa rouille et ses croûtons.",i:["1kg poissons variés","2 oignons","4 tomates","1 bulbe fenouil","Safran","Pastis","Bouquet garni","Rouille","Baguette"],s:["Faire revenir oignons, tomates, fenouil dans l'huile.","Ajouter poissons, safran, pastis et bouquet garni.","Couvrir d'eau. Cuire 30 min.","Mixer et passer au chinois.","Servir avec croûtons grillés et rouille."]},
+{id:53,t:"Entrée",e:"🥚",n:"Quiche lorraine",g:["Entrée","Français"],tm:"50 min",df:"Facile",sv:"6",cl:"440 kcal",d:"La quiche lorraine classique aux lardons et son appareil œuf-crème.",i:["1 pâte brisée","200g lardons","4 œufs","300ml crème fraîche","100ml lait","100g gruyère râpé","Muscade","Sel, poivre"],s:["Préchauffer le four à 200°C.","Faire revenir les lardons sans matière grasse.","Battre œufs, crème, lait et muscade.","Foncer le moule. Répartir lardons et gruyère.","Verser l'appareil. Cuire 30-35 min."]},
+{id:54,t:"Entrée",e:"🥗",n:"Salade de lentilles du Puy",g:["Entrée","Vegan","Végétarien","Français","Healthy"],tm:"30 min",df:"Facile",sv:"4",cl:"260 kcal",d:"Salade tiède de lentilles vertes du Puy avec légumes croquants et vinaigrette moutardée.",i:["300g lentilles du Puy","1 carotte","1 céleri","1 échalote","Persil","Moutarde","Vinaigre de vin","Huile d'olive"],s:["Cuire les lentilles 25 min dans l'eau salée.","Égoutter et laisser tiédir.","Préparer la vinaigrette moutardée.","Couper les légumes en petits dés.","Mélanger tout, assaisonner."]},
+{id:55,t:"Entrée",e:"🥗",n:"Salade de riz au thon",g:["Entrée","Rapide"],tm:"15 min",df:"Facile",sv:"4",cl:"360 kcal",d:"La généreuse salade de riz avec thon, maïs, tomates et vinaigrette à la moutarde.",i:["300g riz cuit","200g thon en boîte","Maïs","Tomates cerises","Cornichons","Oignon rouge","Mayonnaise","Moutarde"],s:["Laisser refroidir le riz cuit.","Couper tomates et cornichons.","Mélanger riz, thon émietté, maïs et légumes.","Assaisonner avec mayo et moutarde.","Réfrigérer 30 min avant de servir."]},
+{id:56,t:"Entrée",e:"🫕",n:"Gaspacho de concombre",g:["Entrée","Vegan","Végétarien","Healthy","Été"],tm:"10 min",df:"Facile",sv:"4",cl:"100 kcal",d:"Soupe froide rafraîchissante au concombre, menthe et yaourt, parfaite en été.",i:["2 concombres","1 yaourt grec","1 gousse d'ail","Menthe fraîche","Citron","2 c.s. huile d'olive","Eau glacée"],s:["Peler et épépiner les concombres.","Mixer avec yaourt, ail, menthe et citron.","Ajouter huile et eau glacée.","Assaisonner.","Réfrigérer 1h. Servir avec feuilles de menthe."]},
+{id:57,t:"Entrée",e:"🥗",n:"Salade de pâtes estivale",g:["Entrée","Végétarien","Italien","Été"],tm:"20 min",df:"Facile",sv:"4",cl:"380 kcal",d:"Salade de pâtes colorée aux légumes méditerranéens, mozzarella et basilic.",i:["300g pâtes courtes","200g mozzarella","Tomates cerises","1 poivron","Olives noires","Basilic","Pesto","Huile d'olive"],s:["Cuire les pâtes al dente. Rincer et refroidir.","Couper mozzarella, tomates et poivron en dés.","Mélanger pâtes et légumes.","Incorporer le pesto et les olives.","Garnir de basilic frais."]},
+{id:58,t:"Entrée",e:"🦐",n:"Tartare de crevettes",g:["Entrée","Asiatique","Healthy","Sans gluten"],tm:"15 min",df:"Facile",sv:"4",cl:"180 kcal",d:"Tartare de crevettes fraîches au citron vert, gingembre et coriandre, esprit thaï.",i:["400g crevettes crues décortiquées","1 citron vert","Gingembre râpé","Coriandre fraîche","Piment","Sauce nuoc-mâm","Oignon rouge","Avocat"],s:["Couper les crevettes en petits dés.","Mélanger citron vert, gingembre, nuoc-mâm et piment.","Mélanger avec les crevettes.","Laisser mariner 5 min.","Servir avec avocat en dés et coriandre."]},
+{id:59,t:"Entrée",e:"🥗",n:"Salade niçoise au thon frais",g:["Entrée","Français","Healthy","Sans gluten"],tm:"20 min",df:"Facile",sv:"2",cl:"340 kcal",d:"La niçoise revisitée avec du thon frais snacké à la poêle, saignant.",i:["2 pavés de thon frais","Haricots verts","Tomates","Olives noires","Anchois","Œufs durs","Salade","Vinaigrette"],s:["Cuire haricots verts al dente. Refroidir.","Faire durcir les œufs.","Saisir le thon frais 1 min par face. Trancher.","Dresser la salade avec tous les éléments.","Assaisonner d'une vinaigrette à l'huile d'olive."]},
+{id:60,t:"Entrée",e:"🥗",n:"Salade de pommes de terre à l'allemande",g:["Entrée","Végétarien","Allemand"],tm:"25 min",df:"Facile",sv:"4",cl:"300 kcal",d:"La salade de pommes de terre allemande avec lardons et vinaigrette chaude.",i:["800g pommes de terre à chair ferme","150g lardons","2 échalotes","3 c.s. vinaigre","Moutarde","Bouillon","Ciboulette"],s:["Cuire les pommes de terre. Peler et trancher encore chaudes.","Faire revenir les lardons et échalotes.","Déglacer au vinaigre. Ajouter le bouillon et la moutarde.","Verser sur les pommes de terre chaudes.","Garnir de ciboulette. Servir tiède."]},
+{id:61,t:"Entrée",e:"🫕",n:"Bouillabaisse simplifiée",g:["Entrée","Français","Fruits de mer"],tm:"45 min",df:"Moyen",sv:"4",cl:"280 kcal",d:"Version accessible de la bouillabaisse marseillaise avec rouille et croûtons.",i:["600g poissons variés","300g moules","1 oignon","3 tomates","Safran","Fenouil","Pastis","Rouille","Croûtons"],s:["Faire revenir oignon et fenouil.","Ajouter tomates, safran, pastis et eau.","Porter à ébullition. Ajouter les poissons.","Cuire 15 min. Ajouter les moules 5 min.","Servir avec rouille et croûtons."]},
+{id:62,t:"Entrée",e:"🥗",n:"Salade tiède de St-Jacques",g:["Entrée","Français","Fruits de mer"],tm:"15 min",df:"Facile",sv:"4",cl:"260 kcal",d:"Noix de Saint-Jacques poêlées sur une salade tiède aux saveurs marines.",i:["16 noix Saint-Jacques","Salade verte","Échalotes","Beurre","Citron","Ciboulette","Fleur de sel"],s:["Sécher les noix de Saint-Jacques.","Faire chauffer le beurre jusqu'à noisette.","Saisir les noix 1-2 min par face. Assaisonner.","Faire revenir les échalotes dans le même beurre.","Servir noix sur la salade avec jus de citron."]},
+{id:63,t:"Entrée",e:"🥗",n:"Salade de betteraves rôties",g:["Entrée","Vegan","Végétarien","Healthy","Sans gluten"],tm:"60 min",df:"Facile",sv:"4",cl:"180 kcal",d:"Betteraves rôties au four, sucrées et caramélisées, avec vinaigrette au cumin.",i:["6 betteraves","3 c.s. huile d'olive","1 c.c. cumin","Vinaigre balsamique","Roquette","Graines de courge","Miel"],s:["Envelopper les betteraves dans du papier alu.","Rôtir 50 min à 200°C. Éplucher chaud.","Couper en quartiers.","Mélanger huile, balsamique, cumin et miel.","Servir sur roquette arrosée de vinaigrette."]},
+{id:64,t:"Entrée",e:"🥗",n:"Salade waldorf",g:["Entrée","Végétarien","Américain"],tm:"15 min",df:"Facile",sv:"4",cl:"320 kcal",d:"La salade waldorf classique avec pommes, céleri, noix et mayonnaise légère.",i:["2 pommes","3 branches céleri","100g noix","Raisins secs","150g mayonnaise","1 c.s. jus de citron","Laitue"],s:["Couper les pommes en dés. Citronner.","Émincer le céleri.","Mélanger avec les noix et raisins secs.","Incorporer la mayonnaise.","Servir sur feuilles de laitue."]},
+{id:65,t:"Entrée",e:"🫕",n:"Soupe au pistou",g:["Entrée","Vegan","Végétarien","Français","Été"],tm:"50 min",df:"Facile",sv:"6",cl:"300 kcal",d:"La soupe au pistou provençale avec ses légumes d'été et son pistou au basilic.",i:["Haricots verts","Courgettes","Carottes","Tomates","Haricots blancs","Petites pâtes","Ail","Basilic","Huile d'olive","Parmesan"],s:["Cuire les légumes en dés dans l'eau salée 20 min.","Ajouter les haricots blancs et les pâtes.","Pistou : mixer ail, basilic, huile et parmesan.","Cuire encore 10 min.","Servir avec une cuillerée de pistou."]},
+{id:66,t:"Entrée",e:"🥗",n:"Salade de crabe mayonnaise",g:["Entrée","Français","Fruits de mer"],tm:"15 min",df:"Facile",sv:"4",cl:"280 kcal",d:"Salade élégante de chair de crabe fraîche à la mayonnaise citronnée.",i:["400g chair de crabe","3 c.s. mayonnaise","1 citron","Salade verte","Ciboulette","Câpres"],s:["Égoutter et effeuiller la chair de crabe.","Mélanger avec mayonnaise et jus de citron.","Assaisonner. Ajouter câpres et ciboulette.","Dresser la salade dans les assiettes.","Déposer le crabe au centre."]},
+{id:67,t:"Entrée",e:"🥗",n:"Verrines crabe avocat",g:["Entrée","Français","Fruits de mer"],tm:"20 min",df:"Facile",sv:"4",cl:"260 kcal",d:"Verrines élégantes avec crabe frais et dés d'avocat dans une sauce citronnée.",i:["200g chair de crabe","2 avocats","1 citron","Aneth","2 c.s. mayonnaise","Ciboulette"],s:["Couper les avocats en petits dés. Citronner.","Mélanger le crabe avec la mayonnaise et la ciboulette.","Disposer les dés d'avocat au fond des verrines.","Déposer le crabe par-dessus.","Garnir d'aneth et d'un zeste de citron."]},
+{id:68,t:"Entrée",e:"🥗",n:"Salade de haricots blancs",g:["Entrée","Vegan","Végétarien","Méditerranéen","Healthy"],tm:"15 min",df:"Facile",sv:"4",cl:"240 kcal",d:"Salade de haricots blancs à l'italienne avec tomates séchées, sauge et ail.",i:["2 boîtes haricots blancs","Tomates séchées","3 gousses d'ail","Sauge fraîche","3 c.s. huile d'olive","Vinaigre"],s:["Égoutter et rincer les haricots.","Faire revenir l'ail et la sauge dans l'huile.","Ajouter les haricots. Mélanger.","Incorporer les tomates séchées.","Assaisonner. Servir tiède ou froid."]},
+{id:69,t:"Entrée",e:"🥗",n:"Salade roquette parmesan",g:["Entrée","Végétarien","Italien","Rapide"],tm:"5 min",df:"Facile",sv:"2",cl:"220 kcal",d:"Salade simple et élégante de roquette avec copeaux de parmesan et pignons.",i:["150g roquette","80g parmesan","30g pignons de pin","Vinaigre balsamique","Huile d'olive"],s:["Toaster les pignons à sec.","Préparer la vinaigrette balsamique.","Disposer la roquette dans les assiettes.","Ajouter les copeaux de parmesan et pignons.","Assaisonner au dernier moment."]},
+{id:70,t:"Entrée",e:"🥗",n:"Salade figues gorgonzola",g:["Entrée","Végétarien","Italien"],tm:"10 min",df:"Facile",sv:"4",cl:"300 kcal",d:"Figues rôties et gorgonzola crémeux sur roquette avec noix caramélisées.",i:["6 figues","100g gorgonzola","Roquette","Noix caramélisées","Miel","Balsamique blanc","Huile d'olive"],s:["Couper les figues en deux. Rôtir 5 min à 200°C.","Disposer la roquette dans les assiettes.","Déposer les figues chaudes et le gorgonzola émietté.","Parsemer de noix.","Arroser de miel et balsamique."]},
+{id:71,t:"Entrée",e:"🥗",n:"Salade de concombre à la menthe",g:["Entrée","Vegan","Végétarien","Rapide","Healthy"],tm:"10 min",df:"Facile",sv:"4",cl:"80 kcal",d:"Salade fraîche et légère de concombre mariné avec menthe et vinaigre de riz.",i:["2 concombres","Menthe fraîche","3 c.s. vinaigre de riz","1 c.s. huile sésame","1 c.c. sucre","Graines de sésame"],s:["Trancher finement le concombre.","Saler et laisser dégorger 15 min. Essorer.","Préparer la marinade : vinaigre, huile, sucre.","Mélanger avec le concombre et la menthe.","Parsemer de sésame."]},
+{id:72,t:"Entrée",e:"🫕",n:"Velouté de cresson",g:["Entrée","Végétarien","Français","Healthy"],tm:"25 min",df:"Facile",sv:"4",cl:"160 kcal",d:"Un velouté vert intense de cresson, légèrement poivré et crémeux.",i:["300g cresson","2 pommes de terre","1 oignon","800ml bouillon légumes","150ml crème fraîche","Beurre"],s:["Faire suer l'oignon dans le beurre.","Ajouter pommes de terre en cubes et bouillon. Cuire 15 min.","Ajouter le cresson. Cuire 5 min.","Mixer avec la crème.","Assaisonner. Servir avec un filet de crème."]},
+{id:73,t:"Entrée",e:"🥗",n:"Salade de pamplemousse crevettes",g:["Entrée","Fruits de mer","Healthy","Sans gluten"],tm:"15 min",df:"Facile",sv:"4",cl:"200 kcal",d:"Salade légère et acidulée avec pamplemousse rose, crevettes et avocat.",i:["300g crevettes cuites","2 pamplemousses roses","2 avocats","Roquette","Coriandre","2 c.s. huile d'olive","1 citron vert"],s:["Prélever les suprêmes de pamplemousse.","Couper les avocats en tranches.","Disposer roquette, pamplemousse, crevettes et avocat.","Préparer vinaigrette citron vert-huile.","Assaisonner. Garnir de coriandre."]},
+{id:74,t:"Entrée",e:"🥗",n:"Salade de pommes de terre saucisse",g:["Entrée","Français"],tm:"25 min",df:"Facile",sv:"4",cl:"380 kcal",d:"Salade tiède de pommes de terre avec saucisse fumée et vinaigrette chaude.",i:["800g pommes de terre","4 saucisses fumées","1 oignon","Vinaigre","Moutarde","Bouillon","Ciboulette"],s:["Cuire les pommes de terre. Émincer.","Couper les saucisses en rondelles.","Faire revenir l'oignon. Déglacer au vinaigre.","Ajouter bouillon et moutarde.","Verser sur pommes de terre et saucisses. Garnir de ciboulette."]},
+{id:75,t:"Entrée",e:"🥗",n:"Salade de lentilles beluga saumon",g:["Entrée","Français","Healthy","Sans gluten"],tm:"30 min",df:"Facile",sv:"4",cl:"320 kcal",d:"Lentilles noires beluga avec saumon fumé et vinaigrette à l'huile de noisette.",i:["200g lentilles beluga","200g saumon fumé","Échalote","Citron","Huile de noisette","Ciboulette"],s:["Cuire les lentilles 20 min. Égoutter et tiédir.","Émincer l'échalote finement.","Préparer vinaigrette citron et huile de noisette.","Mélanger lentilles, échalote et vinaigrette.","Servir avec le saumon fumé et ciboulette."]},
+{id:76,t:"Entrée",e:"🫕",n:"Crème de maïs au cumin",g:["Entrée","Végétarien","Américain"],tm:"25 min",df:"Facile",sv:"4",cl:"200 kcal",d:"Crème de maïs sucrée et soyeuse, parfumée au cumin et garnie de poivrons grillés.",i:["500g maïs","1 oignon","700ml bouillon légumes","100ml crème fraîche","Cumin","Poivron rouge","Beurre"],s:["Faire suer l'oignon dans le beurre.","Ajouter maïs et cumin. Cuire 5 min.","Verser le bouillon. Cuire 15 min.","Mixer finement avec la crème.","Servir avec poivron rouge grillé en dés."]},
+{id:77,t:"Entrée",e:"🥗",n:"Salade niçoise végétarienne",g:["Entrée","Végétarien","Français","Healthy"],tm:"15 min",df:"Facile",sv:"4",cl:"260 kcal",d:"La niçoise sans thon avec œufs, haricots verts, olives et artichauts.",i:["4 œufs durs","200g haricots verts","4 tomates","1 poivron","100g olives","4 artichauts marinés","Laitue","Vinaigrette"],s:["Cuire les haricots verts al dente. Refroidir.","Faire durcir les œufs. Écaler.","Couper les tomates et le poivron.","Dresser la salade avec tous les ingrédients.","Assaisonner d'une vinaigrette à l'huile d'olive."]},
+{id:78,t:"Entrée",e:"🥗",n:"Salade de roquette poires noix",g:["Entrée","Végétarien","Français"],tm:"10 min",df:"Facile",sv:"4",cl:"280 kcal",d:"Salade légère de roquette avec poires fraîches, noix et vinaigrette au miel.",i:["150g roquette","2 poires","80g noix","100g parmesan","2 c.s. miel","Vinaigre de cidre","Huile de noix","Sel, poivre"],s:["Couper les poires en lamelles fines.","Concasser grossièrement les noix.","Préparer vinaigrette : miel, vinaigre, huile.","Mélanger roquette, poires et noix.","Ajouter copeaux de parmesan. Assaisonner."]},
+{id:79,t:"Entrée",e:"🫕",n:"Velouté de courgettes au basilic",g:["Entrée","Végétarien","Healthy","Été"],tm:"25 min",df:"Facile",sv:"4",cl:"150 kcal",d:"Un velouté estival léger de courgettes parfumé au basilic frais.",i:["800g courgettes","1 oignon","2 gousses d'ail","700ml bouillon légumes","Basilic frais","1 c.s. huile d'olive","Sel, poivre"],s:["Faire suer oignon et ail dans l'huile.","Ajouter les courgettes en rondelles. Cuire 5 min.","Verser le bouillon. Cuire 15 min.","Mixer avec le basilic.","Assaisonner. Servir chaud ou froid."]},
+{id:80,t:"Entrée",e:"🥗",n:"Salade de haricots verts aux amandes",g:["Entrée","Végétarien","Français","Healthy"],tm:"15 min",df:"Facile",sv:"4",cl:"180 kcal",d:"Haricots verts al dente avec amandes grillées et vinaigrette au citron.",i:["600g haricots verts","60g amandes effilées","1 échalote","2 c.s. vinaigre citron","3 c.s. huile d'olive","Sel, poivre"],s:["Cuire les haricots verts 5 min. Garder al dente.","Rafraîchir à l'eau froide.","Toaster les amandes à sec jusqu'à dorure.","Émincer l'échalote. Préparer la vinaigrette.","Mélanger et assaisonner."]},
+
+// ── PLATS (120) ──
+{id:81,t:"Plat",e:"🍝",n:"Spaghetti Carbonara",g:["Plat","Italien","Rapide"],tm:"20 min",df:"Facile",sv:"4",cl:"620 kcal",d:"Le classique romain : pâtes al dente, guanciale croustillant et sauce aux œufs et pecorino.",i:["400g spaghetti","200g guanciale ou lardons","4 jaunes d'œufs","80g pecorino râpé","Poivre noir concassé","Sel"],s:["Cuire les pâtes al dente. Conserver l'eau de cuisson.","Faire revenir le guanciale jusqu'à croustillant.","Mélanger jaunes et pecorino avec beaucoup de poivre.","Hors du feu, mélanger pâtes, guanciale et sauce.","Détendre avec l'eau de cuisson pour texture soyeuse."]},
+{id:82,t:"Plat",e:"🍛",n:"Risotto aux champignons",g:["Plat","Italien","Végétarien"],tm:"35 min",df:"Moyen",sv:"4",cl:"490 kcal",d:"Un risotto crémeux aux champignons sauvages, parfumé au thym et au parmesan.",i:["300g riz arborio","500g champignons mélangés","1 oignon","2 gousses d'ail","150ml vin blanc","1L bouillon légumes chaud","80g parmesan","40g beurre","Thym frais"],s:["Faire revenir oignon et ail. Ajouter les champignons 8 min.","Ajouter le riz. Nacrer 2 min.","Verser le vin. Laisser absorber.","Ajouter le bouillon louche par louche 18 min.","Retirer du feu. Incorporer beurre et parmesan."]},
+{id:83,t:"Plat",e:"🥩",n:"Bœuf bourguignon",g:["Plat","Français","Réconfortant"],tm:"180 min",df:"Moyen",sv:"6",cl:"620 kcal",d:"Le grand classique : bœuf tendre mijoté dans un vin rouge corsé avec lardons et champignons.",i:["1.5kg bœuf à braiser","200g lardons","500ml bourgogne rouge","300g champignons","2 carottes","1 oignon","3 gousses d'ail","Bouquet garni","Beurre","Farine"],s:["Faire dorer le bœuf en cubes dans le beurre.","Faire revenir lardons, carottes, oignon. Saupoudrer de farine.","Remettre la viande. Verser le vin. Ajouter ail et bouquet garni.","Mijoter 2h30 à feu doux.","Ajouter champignons sautés. Cuire 30 min."]},
+{id:84,t:"Plat",e:"🍗",n:"Poulet rôti au citron et romarin",g:["Plat","Français","Sans gluten"],tm:"70 min",df:"Facile",sv:"4",cl:"450 kcal",d:"Un poulet rôti parfumé au citron confit et au romarin, peau croustillante et chair juteuse.",i:["1 poulet entier (1.5kg)","2 citrons","4 branches romarin","6 gousses d'ail","40g beurre mou","Huile d'olive","Sel, poivre"],s:["Mélanger beurre, zeste de citron et romarin haché.","Glisser le beurre sous la peau.","Farcir avec citrons, ail et romarin. Huiler l'extérieur.","Rôtir à 200°C pendant 1h10 en arrosant.","Laisser reposer 10 min avant de découper."]},
+{id:85,t:"Plat",e:"🍜",n:"Pad Thaï aux crevettes",g:["Plat","Asiatique","Thaïlandais","Rapide"],tm:"25 min",df:"Facile",sv:"2",cl:"510 kcal",d:"Le célèbre wok thaïlandais avec nouilles de riz, crevettes et sauce sucrée-acidulée.",i:["200g nouilles de riz","200g crevettes","2 œufs","100g germes de soja","Oignons verts","50g cacahuètes","3 c.s. sauce de poisson","2 c.s. tamarin","1 c.s. sucre","Citron vert"],s:["Tremper les nouilles dans l'eau tiède 20 min.","Mélanger sauce de poisson, tamarin et sucre.","Sauter les crevettes 2 min. Réserver.","Brouiller les œufs. Ajouter nouilles et sauce.","Incorporer crevettes, germes de soja. Garnir de cacahuètes."]},
+{id:86,t:"Plat",e:"🍛",n:"Curry de lentilles corail",g:["Plat","Indien","Vegan","Végétarien","Healthy","Sans gluten"],tm:"30 min",df:"Facile",sv:"4",cl:"380 kcal",d:"Un dal crémeux aux lentilles corail et lait de coco, parfumé au curcuma et cumin.",i:["300g lentilles corail","400ml lait de coco","1 boîte tomates","1 oignon","3 gousses d'ail","Gingembre","Curry","Curcuma","Cumin","Coriandre fraîche"],s:["Faire revenir oignon, ail et gingembre avec épices.","Ajouter lentilles rincées, tomates et eau. Cuire 15 min.","Incorporer le lait de coco. Cuire 10 min.","Ajuster l'assaisonnement.","Servir avec riz basmati et coriandre."]},
+{id:87,t:"Plat",e:"🐟",n:"Saumon teriyaki",g:["Plat","Asiatique","Japonais","Rapide","Sans gluten"],tm:"20 min",df:"Facile",sv:"2",cl:"410 kcal",d:"Des pavés de saumon laqués au teriyaki maison, brillants et savoureux.",i:["2 pavés de saumon","4 c.s. sauce soja","2 c.s. mirin","2 c.s. saké","1 c.s. sucre","Graines de sésame","Oignon vert"],s:["Faire réduire soja, mirin, saké et sucre 3 min.","Saisir le saumon côté peau 3 min.","Retourner et saisir 2 min.","Napper de sauce et caraméliser légèrement.","Servir avec riz et sésame grillé."]},
+{id:88,t:"Plat",e:"🥩",n:"Steak frites maison",g:["Plat","Français","Rapide"],tm:"25 min",df:"Facile",sv:"2",cl:"720 kcal",d:"Un steak saignant avec frites maison croustillantes et sauce au poivre.",i:["2 entrecôtes (250g)","4 grosses pommes de terre","100ml crème fraîche","2 c.s. cognac","Poivre concassé","Beurre","Huile de friture"],s:["Couper les pommes de terre en bâtonnets. Frire 5 min à 150°C.","Saisir les steaks dans beurre chaud. 2 min par face pour saignant.","Déglacer au cognac. Ajouter poivre et crème. Réduire.","Refaire les frites à 180°C 3 min. Saler.","Servir avec la sauce au poivre."]},
+{id:89,t:"Plat",e:"🍖",n:"Tajine d'agneau aux pruneaux",g:["Plat","Marocain","Réconfortant"],tm:"120 min",df:"Moyen",sv:"4",cl:"580 kcal",d:"Un tajine fondant et parfumé, la douceur des pruneaux se marie aux épices marocaines.",i:["1kg épaule d'agneau","200g pruneaux","2 oignons","3 gousses d'ail","Cannelle","Gingembre","Curcuma","2 c.s. miel","Coriandre","Amandes effilées"],s:["Faire dorer l'agneau en morceaux.","Ajouter oignons, épices. Cuire 5 min.","Verser 300ml d'eau. Mijoter 1h30.","Ajouter pruneaux et miel 20 min avant la fin.","Servir avec semoule et amandes grillées."]},
+{id:90,t:"Plat",e:"🍗",n:"Poulet tikka masala",g:["Plat","Indien","Épicé"],tm:"45 min",df:"Moyen",sv:"4",cl:"490 kcal",d:"Des morceaux de poulet marinés et grillés dans une sauce tomate crémeuse aux épices indiennes.",i:["700g blanc de poulet","200ml yaourt","400ml lait de coco","400g tomates concassées","1 oignon","3 gousses d'ail","Gingembre","Garam masala","Paprika","Crème fraîche"],s:["Mariner le poulet dans yaourt et épices 30 min.","Griller au four 220°C 15 min.","Faire revenir oignon, ail, gingembre avec épices.","Ajouter tomates et lait de coco. Mijoter 15 min.","Ajouter poulet grillé et crème. Cuire 10 min."]},
+{id:91,t:"Plat",e:"🥘",n:"Paella valenciana",g:["Plat","Espagnol","Fruits de mer"],tm:"55 min",df:"Difficile",sv:"6",cl:"580 kcal",d:"La vraie paella avec crevettes, moules, chorizo et riz au safran.",i:["400g riz bomba","500g crevettes","500g moules","200g chorizo","1 poivron rouge","1 oignon","3 tomates","1L bouillon poisson","Safran","Paprika fumé"],s:["Faire revenir chorizo. Réserver.","Faire revenir oignon, poivron et tomates 10 min.","Ajouter riz, paprika et safran. Nacrer 2 min.","Verser le bouillon chaud. Cuire 15 min sans remuer.","Disposer crevettes et moules. Cuire 10 min."]},
+{id:92,t:"Plat",e:"🍝",n:"Pâtes all'Arrabbiata",g:["Plat","Italien","Végétarien","Épicé","Rapide"],tm:"20 min",df:"Facile",sv:"4",cl:"420 kcal",d:"Sauce tomate pimentée à l'ail sur des penne al dente, simple et délicieusement relevée.",i:["400g penne","400g tomates pelées","4 gousses d'ail","2 piments rouges","Huile d'olive","Persil plat","Sel"],s:["Faire revenir ail et piment dans l'huile 2 min.","Ajouter tomates écrasées. Cuire 15 min.","Assaisonner. Cuire les penne al dente.","Mélanger pâtes et sauce avec eau de cuisson.","Servir avec persil et huile d'olive."]},
+{id:93,t:"Plat",e:"🍗",n:"Coq au vin",g:["Plat","Français","Réconfortant"],tm:"120 min",df:"Moyen",sv:"4",cl:"540 kcal",d:"L'authentique coq au vin bourguignon mijoté dans un vin rouge corsé avec lardons.",i:["1 poulet découpé","750ml vin rouge","200g lardons","300g champignons","2 oignons","3 carottes","Bouquet garni","Farine","Beurre","Cognac"],s:["Mariner le poulet dans le vin 2h.","Dorer le poulet fariné dans le beurre. Flamber au cognac.","Ajouter légumes de marinade et vin filtré.","Mijoter 1h à couvert.","Ajouter lardons et champignons. Cuire 20 min."]},
+{id:94,t:"Plat",e:"🥘",n:"Ratatouille niçoise",g:["Plat","Français","Vegan","Végétarien","Été"],tm:"60 min",df:"Facile",sv:"4",cl:"200 kcal",d:"La ratatouille provençale traditionnelle, mijotée longuement pour concentrer les arômes.",i:["2 courgettes","2 aubergines","3 tomates","2 poivrons","2 oignons","4 gousses d'ail","Herbes de Provence","Huile d'olive"],s:["Couper tous les légumes en cubes.","Faire revenir aubergines 10 min. Réserver.","Faire revenir oignons, ail, poivrons.","Ajouter courgettes, tomates, herbes.","Remettre aubergines. Mijoter 35 min à découvert."]},
+{id:95,t:"Plat",e:"🍝",n:"Lasagne à la bolognaise",g:["Plat","Italien","Réconfortant"],tm:"90 min",df:"Difficile",sv:"6",cl:"680 kcal",d:"La lasagne classique avec bolognaise mijotée et béchamel onctueuse.",i:["12 feuilles lasagne","400g bœuf haché","200g porc haché","400g tomates","1 oignon","2 carottes","150ml vin rouge","500ml lait","50g beurre","50g farine","200g parmesan"],s:["Bolognaise : dorer viandes, ajouter légumes, vin et tomates. Mijoter 45 min.","Béchamel : roux avec beurre-farine, incorporer lait, assaisonner.","Préchauffer four à 180°C.","Alterner pâtes, bolognaise, béchamel et parmesan.","Cuire 40 min. Reposer 10 min."]},
+{id:96,t:"Plat",e:"🥩",n:"Magret de canard aux cerises",g:["Plat","Français","Élégant"],tm:"25 min",df:"Moyen",sv:"2",cl:"580 kcal",d:"Un magret de canard rosé avec une sauce aux cerises acidulées.",i:["2 magrets de canard","300g cerises","2 c.s. sucre","100ml vin rouge","1 c.s. balsamique","Sel, poivre"],s:["Quadriller le gras des magrets. Saisir côté gras à froid 8 min.","Retourner, cuire 5 min pour rosé. Saler, poivrer.","Laisser reposer sous alu.","Caraméliser cerises dans les sucs. Déglacer vin et balsamique.","Trancher le magret. Napper de sauce."]},
+{id:97,t:"Plat",e:"🍜",n:"Ramen au miso",g:["Plat","Japonais","Asiatique"],tm:"45 min",df:"Moyen",sv:"2",cl:"540 kcal",d:"Un bouillon profond au miso blanc avec ramen moelleux et garnitures généreuses.",i:["200g ramen frais","3 c.s. miso blanc","1L bouillon poulet","100g porc rôti ou tofu","2 œufs mollets","Maïs","Algues nori","Oignon vert"],s:["Cuire les œufs 7 min. Refroidir et écaler.","Chauffer le bouillon. Délayer le miso avec bouillon.","Incorporer miso et beurre au bouillon. Ne pas bouillir.","Cuire les ramen.","Assembler : ramen, bouillon, garnitures."]},
+{id:98,t:"Plat",e:"🥘",n:"Chili sin carne",g:["Plat","Mexicain","Vegan","Végétarien","Épicé","Sans gluten"],tm:"40 min",df:"Facile",sv:"4",cl:"340 kcal",d:"Un chili végétalien généreux et épicé, riche en légumineuses.",i:["2 boîtes haricots rouges","1 boîte maïs","400g tomates concassées","2 poivrons","1 oignon","3 gousses d'ail","Cumin","Paprika fumé","Piment","Coriandre"],s:["Faire revenir oignon et ail.","Ajouter poivrons en dés. Cuire 5 min.","Incorporer épices. Cuire 1 min.","Ajouter tomates, haricots et maïs.","Mijoter 25 min. Servir avec coriandre."]},
+{id:99,t:"Plat",e:"🍝",n:"Cacio e pepe",g:["Plat","Italien","Végétarien","Rapide"],tm:"15 min",df:"Moyen",sv:"2",cl:"540 kcal",d:"Le plat romain le plus simple et technique : pâtes, pecorino et poivre, c'est tout.",i:["200g tonnarelli ou spaghetti","100g pecorino romano râpé","2 c.c. poivre noir concassé","Sel"],s:["Cuire les pâtes dans peu d'eau très amidonnée.","Toaster le poivre à sec. Ajouter eau de cuisson.","Égoutter les pâtes dans la poêle avec le poivre.","Hors du feu, incorporer le pecorino en remuant vivement.","Détendre avec l'eau de cuisson pour texture crémeuse."]},
+{id:100,t:"Plat",e:"🥩",n:"Pot-au-feu",g:["Plat","Français","Réconfortant"],tm:"180 min",df:"Facile",sv:"6",cl:"420 kcal",d:"Le pot-au-feu bourgeois avec ses légumes fondants et viande tendre.",i:["1kg bœuf (plat de côtes)","Os à moelle","3 carottes","3 navets","3 poireaux","2 oignons","Bouquet garni","Moutarde","Cornichons"],s:["Couvrir le bœuf d'eau froide salée. Bouillir. Écumer.","Ajouter légumes et bouquet garni. Baisser le feu.","Mijoter 2h30.","Ajouter os à moelle 30 min avant la fin.","Servir bouillon en entrée, viande et légumes en plat."]},
+{id:101,t:"Plat",e:"🍗",n:"Poulet basquaise",g:["Plat","Français","Basque"],tm:"60 min",df:"Facile",sv:"4",cl:"420 kcal",d:"Le poulet basquaise avec sa sauce aux poivrons et tomates au piment d'Espelette.",i:["1 poulet découpé","3 poivrons","4 tomates","1 oignon","3 gousses d'ail","Piment d'Espelette","Jambon de Bayonne","Vin blanc","Herbes"],s:["Faire dorer le poulet. Réserver.","Faire revenir oignon, ail, jambon.","Ajouter poivrons émincés. Cuire 10 min.","Incorporer tomates, vin blanc et piment.","Remettre le poulet. Mijoter 35 min."]},
+{id:102,t:"Plat",e:"🥩",n:"Côte de porc à la moutarde",g:["Plat","Français","Rapide"],tm:"20 min",df:"Facile",sv:"2",cl:"430 kcal",d:"Côte de porc tendre nappée d'une sauce à la moutarde à l'ancienne et à la crème.",i:["2 côtes de porc","3 c.s. moutarde à l'ancienne","150ml crème fraîche","1 échalote","1 verre vin blanc","Beurre","Thym"],s:["Saisir les côtes dans le beurre mousseux 4 min par face.","Réserver sous papier alu.","Faire revenir l'échalote. Déglacer au vin blanc.","Ajouter crème et moutarde. Réduire 3 min.","Remettre les côtes dans la sauce."]},
+{id:103,t:"Plat",e:"🥘",n:"Blanquette de veau",g:["Plat","Français","Réconfortant"],tm:"90 min",df:"Moyen",sv:"4",cl:"520 kcal",d:"La blanquette à l'ancienne, sauce blanche crémeuse et veloutée avec légumes fondants.",i:["1kg veau (épaule)","300g champignons","2 carottes","2 poireaux","50g beurre","50g farine","200ml crème fraîche","2 jaunes d'œufs","Citron"],s:["Pocher le veau avec légumes et bouquet garni 1h.","Filtrer le bouillon.","Roux beurre-farine, incorporer bouillon.","Lier avec jaunes et crème. Ajouter citron.","Remettre viande et légumes dans la sauce."]},
+{id:104,t:"Plat",e:"🍛",n:"Palak paneer",g:["Plat","Indien","Végétarien","Sans gluten"],tm:"35 min",df:"Moyen",sv:"4",cl:"360 kcal",d:"Le curry d'épinards et de fromage indien, vert vibrant et onctueux.",i:["500g épinards","250g paneer","1 oignon","3 gousses d'ail","Gingembre","Cumin","Coriandre","Garam masala","Crème fraîche"],s:["Blanchir les épinards 2 min. Mixer en purée.","Faire dorer le paneer en cubes.","Faire revenir oignon, ail, gingembre avec épices.","Ajouter purée d'épinards. Cuire 10 min.","Incorporer paneer et crème."]},
+{id:105,t:"Plat",e:"🍗",n:"Poulet au beurre indien",g:["Plat","Indien","Réconfortant"],tm:"50 min",df:"Moyen",sv:"4",cl:"580 kcal",d:"Le butter chicken crémeux et parfumé, la recette indienne la plus populaire.",i:["700g poulet","400g tomates concassées","200ml crème fraîche","50g beurre","1 oignon","3 gousses d'ail","Gingembre","Garam masala","Paprika","Curcuma","Fenugrec"],s:["Faire dorer le poulet mariné. Réserver.","Faire revenir oignon, ail, gingembre avec épices.","Ajouter tomates. Cuire 15 min. Mixer la sauce.","Incorporer crème et beurre.","Ajouter le poulet. Mijoter 15 min."]},
+{id:106,t:"Plat",e:"🥘",n:"Shakshuka",g:["Plat","Moyen-Orient","Végétarien","Épicé","Rapide"],tm:"25 min",df:"Facile",sv:"2",cl:"320 kcal",d:"Œufs pochés dans une sauce tomate relevée aux poivrons et épices orientales.",i:["4 œufs","400g tomates concassées","2 poivrons rouges","1 oignon","3 gousses d'ail","Cumin","Paprika","Piment","Feta","Coriandre"],s:["Faire revenir oignon, ail et poivrons.","Incorporer épices et cuire 1 min.","Ajouter tomates. Cuire 10 min.","Faire des puits. Casser les œufs.","Couvrir et cuire 5 min. Garnir de feta et herbes."]},
+{id:107,t:"Plat",e:"🍜",n:"Laksa malaisien",g:["Plat","Asiatique","Épicé","Réconfortant"],tm:"40 min",df:"Moyen",sv:"4",cl:"520 kcal",d:"Le laksa crémeux et épicé de Malaisie, bouillon coco au curry avec nouilles.",i:["400ml lait de coco","500ml bouillon","200g nouilles de riz","300g crevettes","100g pousses de soja","2 c.s. pâte de curry","Citronnelle","Sauce poisson","Citron vert"],s:["Faire revenir la pâte de curry avec citronnelle.","Ajouter lait de coco et bouillon. Frémissement.","Assaisonner avec sauce de poisson.","Cuire les crevettes dans le bouillon 3 min.","Servir avec nouilles, germes et herbes fraîches."]},
+{id:108,t:"Plat",e:"🥘",n:"Goulash hongrois",g:["Plat","Hongrois","Réconfortant","Épicé"],tm:"120 min",df:"Facile",sv:"6",cl:"480 kcal",d:"Le ragoût de bœuf hongrois au paprika, rustique et réconfortant.",i:["1kg bœuf à braiser","3 oignons","3 c.s. paprika doux","1 c.s. paprika fort","3 poivrons","400g tomates","Bouillon","Crème fraîche"],s:["Faire dorer le bœuf en cubes.","Faire revenir les oignons. Ajouter paprika hors du feu.","Incorporer poivrons, tomates et bouillon.","Mijoter 1h30.","Servir avec nouilles et crème fraîche."]},
+{id:109,t:"Plat",e:"🍕",n:"Pizza Margherita",g:["Plat","Italien","Végétarien"],tm:"45 min",df:"Moyen",sv:"2",cl:"560 kcal",d:"La pizza napolitaine authentique : pâte fine, sauce tomate, mozzarella et basilic.",i:["300g farine T00","5g levure","180ml eau tiède","200g sauce tomate","200g mozzarella fior di latte","Basilic frais","Huile d'olive"],s:["Pétrir la pâte 15 min. Laisser lever 1h.","Étaler finement.","Déposer sauce tomate et mozzarella déchirée.","Cuire à 250°C 10 min.","Garnir de basilic frais et huile d'olive."]},
+{id:110,t:"Plat",e:"🍗",n:"Curry vert thaï au poulet",g:["Plat","Asiatique","Thaïlandais","Épicé"],tm:"25 min",df:"Facile",sv:"4",cl:"460 kcal",d:"Le curry vert thaïlandais au lait de coco parfumé à la citronnelle.",i:["600g blanc de poulet","400ml lait de coco","2 c.s. pâte curry vert","1 citronnelle","Feuilles de kafir","Sauce de poisson","Sucre de palme","Aubergines thaïes","Basilic thaï"],s:["Faire revenir la pâte de curry dans l'huile 1 min.","Ajouter le lait de coco et porter à frémissement.","Incorporer le poulet en lamelles. Cuire 8 min.","Ajouter aubergines, citronnelle et feuilles de kafir.","Assaisonner. Terminer avec le basilic thaï."]},
+{id:111,t:"Plat",e:"🥩",n:"Tartare de bœuf",g:["Plat","Français","Rapide","Sans gluten"],tm:"15 min",df:"Facile",sv:"2",cl:"380 kcal",d:"Un tartare de bœuf classique et bien assaisonné, bistrot incontournable.",i:["300g filet de bœuf","2 jaunes d'œufs","1 c.s. câpres","1 c.s. cornichons","1 c.s. moutarde","Tabasco","Worcestershire","Oignon rouge","Persil"],s:["Hacher le bœuf finement au couteau uniquement.","Mélanger jaunes, moutarde, Worcestershire, Tabasco.","Incorporer le bœuf, câpres, cornichons, oignon.","Assaisonner avec sel, poivre et huile.","Dresser à l'aide d'un cercle."]},
+{id:112,t:"Plat",e:"🦐",n:"Crevettes à l'ail et beurre",g:["Plat","Rapide","Sans gluten","Fruits de mer"],tm:"15 min",df:"Facile",sv:"2",cl:"320 kcal",d:"Des crevettes juteuses sautées dans un beurre à l'ail et au persil.",i:["400g crevettes décortiquées","4 gousses d'ail","50g beurre","Persil plat","½ citron","Piment d'Espelette","Sel"],s:["Sécher les crevettes.","Faire fondre le beurre à feu vif. Ajouter l'ail 30 sec.","Saisir les crevettes 1 min par face.","Assaisonner avec piment et sel.","Presser le citron. Ajouter le persil."]},
+{id:113,t:"Plat",e:"🍜",n:"Soupe pho au bœuf",g:["Plat","Vietnamien","Asiatique","Réconfortant"],tm:"180 min",df:"Moyen",sv:"4",cl:"420 kcal",d:"Le bouillon vietnamien légendaire, longuement mijoté avec des épices.",i:["800g bœuf (plat de côtes)","200g bœuf cru tranché","200g nouilles de riz","2 oignons","5cm gingembre","3 anis étoilés","Sauce nuoc-mâm","Pousses de soja","Basilic thaï","Citron vert"],s:["Griller oignons et gingembre sur la flamme.","Pocher le bœuf 5 min. Jeter l'eau. Couvrir d'eau froide.","Ajouter oignons, gingembre, épices. Mijoter 2h30.","Passer le bouillon. Assaisonner au nuoc-mâm.","Servir bouillant sur les nouilles, herbes et bœuf cru."]},
+{id:114,t:"Plat",e:"🥘",n:"Moussaka grecque",g:["Plat","Grec","Réconfortant"],tm:"90 min",df:"Difficile",sv:"6",cl:"580 kcal",d:"La moussaka traditionnelle grecque avec aubergines confites et béchamel dorée.",i:["3 aubergines","500g agneau haché","400g tomates","1 oignon","Cannelle","Muscade","500ml lait","50g beurre","50g farine","2 œufs","Parmesan"],s:["Griller les aubergines en tranches.","Bolognaise agneau avec tomates, oignon et cannelle.","Béchamel avec muscade. Incorporer œufs hors du feu.","Monter : aubergines, viande, aubergines, béchamel.","Cuire à 180°C 45 min."]},
+{id:115,t:"Plat",e:"🍛",n:"Biryani à l'agneau",g:["Plat","Indien","Réconfortant"],tm:"90 min",df:"Difficile",sv:"6",cl:"620 kcal",d:"Le biryani royal avec agneau mariné aux épices et riz parfumé au safran.",i:["800g épaule d'agneau","400g riz basmati","Safran","Garam masala","Yogourt","Oignons frits","Amandes","Ghee","Menthe"],s:["Mariner l'agneau dans yogourt et épices 2h.","Cuire l'agneau mijoté 45 min.","Précuire le riz à mi-cuisson.","Alterner riz et agneau dans grande casserole.","Arroser de safran et ghee. Cuire à l'étouffée 25 min."]},
+{id:116,t:"Plat",e:"🥩",n:"Osso buco à la milanaise",g:["Plat","Italien","Réconfortant"],tm:"90 min",df:"Moyen",sv:"4",cl:"540 kcal",d:"Le jarret de veau braisé à la milanaise avec sa gremolata citronnée.",i:["4 tranches jarret de veau","1 oignon","2 carottes","200ml vin blanc","400g tomates","Bouillon","Farine","Zeste citron","Ail","Persil"],s:["Fariner les jarrets. Faire dorer.","Faire revenir légumes. Déglacer au vin blanc.","Ajouter tomates et bouillon.","Cuire au four 160°C 1h30.","Servir avec gremolata (citron, ail, persil hachés)."]},
+{id:117,t:"Plat",e:"🍗",n:"Tajine de poulet aux citrons confits",g:["Plat","Marocain","Réconfortant"],tm:"80 min",df:"Facile",sv:"4",cl:"420 kcal",d:"Un tajine de poulet aux citrons confits et olives vertes, parfumé au safran.",i:["1 poulet découpé","2 citrons confits","100g olives vertes","2 oignons","3 gousses d'ail","Safran","Gingembre","Curcuma","Coriandre"],s:["Faire revenir le poulet dans l'huile. Réserver.","Faire revenir oignons et ail avec épices.","Remettre le poulet avec les citrons confits.","Couvrir d'eau. Mijoter 45 min.","Ajouter les olives 15 min avant la fin."]},
+{id:118,t:"Plat",e:"🥘",n:"Chana masala",g:["Plat","Indien","Vegan","Végétarien","Épicé","Sans gluten"],tm:"35 min",df:"Facile",sv:"4",cl:"340 kcal",d:"Le curry de pois chiches indien épicé et savoureux, riche en protéines.",i:["2 boîtes pois chiches","400g tomates concassées","1 oignon","3 gousses d'ail","Gingembre","Cumin","Coriandre","Garam masala","Piment","Citron"],s:["Faire revenir oignon, ail, gingembre avec épices.","Ajouter les tomates. Cuire 10 min.","Incorporer les pois chiches égouttés.","Mijoter 15 min. Écraser quelques pois chiches.","Assaisonner avec citron et coriandre."]},
+{id:119,t:"Plat",e:"🐟",n:"Brandade de morue",g:["Plat","Français","Réconfortant"],tm:"60 min",df:"Moyen",sv:"4",cl:"450 kcal",d:"La brandade nimoise crémeuse de morue effilochée et pommes de terre.",i:["500g morue salée","500g pommes de terre","200ml huile d'olive","200ml crème chaude","3 gousses d'ail","Muscade","Pain grillé"],s:["Dessaler la morue 24h. Pocher 15 min.","Cuire pommes de terre. Écraser finement.","Travailler la morue effilochée avec l'ail.","Incorporer alternativement huile et crème chaude.","Mélanger avec purée. Gratiner 15 min."]},
+{id:120,t:"Plat",e:"🥩",n:"Bœuf bourguignon simplifié",g:["Plat","Français","Réconfortant"],tm:"60 min",df:"Facile",sv:"4",cl:"480 kcal",d:"Une version plus rapide du bourguignon avec les mêmes saveurs profondes.",i:["800g bœuf à braiser","200g champignons","150g lardons","500ml vin rouge","1 oignon","2 carottes","Bouquet garni","Beurre"],s:["Faire dorer le bœuf en morceaux. Réserver.","Faire revenir lardons, oignon et carottes.","Remettre le bœuf. Verser le vin et bouquet garni.","Cuire sous pression 35 min ou mijoter 1h.","Ajouter les champignons sautés. Cuire 10 min."]},
+{id:121,t:"Plat",e:"🍝",n:"Pâtes pesto genovese",g:["Plat","Italien","Végétarien","Rapide"],tm:"10 min",df:"Facile",sv:"4",cl:"390 kcal",d:"Le vrai pesto génois au mortier : basilic frais, pignons, parmesan et ail.",i:["400g trofie ou linguine","50g basilic frais","30g pignons de pin","50g parmesan","1 gousse d'ail","150ml huile d'olive","Sel"],s:["Toréfier les pignons à sec.","Mixer basilic, pignons, ail et sel.","Ajouter le parmesan. Mixer.","Incorporer l'huile en filet.","Mélanger avec les pâtes chaudes et eau de cuisson."]},
+{id:122,t:"Plat",e:"🍗",n:"Poulet rôti à l'ail confit",g:["Plat","Français","Sans gluten"],tm:"65 min",df:"Facile",sv:"4",cl:"470 kcal",d:"Poulet rôti généreux avec 40 gousses d'ail confites, suaves et fondantes.",i:["1 poulet entier","40 gousses d'ail non épluchées","150ml vin blanc","Thym","Laurier","Huile d'olive","Beurre"],s:["Badigeonner le poulet d'huile et beurre. Saler, poivrer.","Disposer dans plat avec l'ail, herbes et vin.","Rôtir à 200°C 1h en arrosant régulièrement.","Servir avec l'ail confit à presser directement.","Accompagner de pommes de terre rôties."]},
+{id:123,t:"Plat",e:"🥘",n:"Lentilles mijotées saucisses",g:["Plat","Français","Réconfortant"],tm:"45 min",df:"Facile",sv:"4",cl:"520 kcal",d:"Lentilles vertes du Puy mijotées avec saucisses fumées à l'alsacienne.",i:["400g lentilles vertes","4 saucisses fumées","2 carottes","1 oignon","3 gousses d'ail","Thym","Laurier","1 c.s. moutarde"],s:["Rincer les lentilles.","Faire revenir oignon et carottes dans l'huile.","Ajouter lentilles, ail, thym, laurier et eau. Cuire 25 min.","Ajouter les saucisses en rondelles. Cuire 10 min.","Incorporer la moutarde. Assaisonner."]},
+{id:124,t:"Plat",e:"🌮",n:"Tacos al pastor",g:["Plat","Mexicain","Épicé"],tm:"40 min",df:"Moyen",sv:"4",cl:"480 kcal",d:"Les tacos mexicains au porc mariné aux piments et épices avec ananas.",i:["600g échine de porc","3 piments séchés","Achiote","Jus d'ananas","Tortillas de maïs","Coriandre","Oignon blanc","Ananas frais","Citron vert"],s:["Tremper les piments 20 min. Mixer en marinade.","Mariner le porc au moins 2h.","Griller en tranches fines à feu vif.","Réchauffer les tortillas.","Garnir avec ananas, oignon, coriandre et citron."]},
+{id:125,t:"Plat",e:"🦑",n:"Encornets farcis à la provençale",g:["Plat","Français","Méditerranéen"],tm:"60 min",df:"Moyen",sv:"4",cl:"360 kcal",d:"Encornets farcis à la farce aux légumes provençaux et riz, mijotés en sauce tomate.",i:["8 encornets","200g riz cuit","1 oignon","3 gousses d'ail","Tomates concassées","Poivron","Persil","Olives","Huile d'olive"],s:["Nettoyer les encornets en gardant les corps entiers.","Faire revenir oignon, ail, poivron et tentacules hachés.","Mélanger avec riz, persil et olives.","Farcir les encornets aux 2/3. Fermer avec un cure-dents.","Mijoter dans sauce tomate 40 min."]},
+{id:126,t:"Plat",e:"🥘",n:"Tajine de poulet aux abricots",g:["Plat","Marocain","Réconfortant"],tm:"75 min",df:"Facile",sv:"4",cl:"440 kcal",d:"Tajine de poulet parfumé aux abricots séchés, amandes et ras el hanout.",i:["1 poulet découpé","150g abricots secs","50g amandes","2 oignons","Ras el hanout","Safran","Gingembre","Miel","Coriandre"],s:["Faire dorer le poulet.","Faire revenir oignons avec épices.","Remettre le poulet. Couvrir d'eau.","Mijoter 40 min.","Ajouter abricots, amandes et miel 15 min avant."]},
+{id:127,t:"Plat",e:"🍛",n:"Dal makhani",g:["Plat","Indien","Végétarien","Réconfortant"],tm:"120 min",df:"Moyen",sv:"4",cl:"460 kcal",d:"Le dal riche et crémeux du Punjab aux lentilles noires et beurre, mijoté longuement.",i:["300g lentilles noires","100g haricots rouges","100g beurre","400g tomates","1 oignon","Ail","Gingembre","Crème fraîche","Garam masala"],s:["Tremper lentilles et haricots une nuit. Cuire 45 min.","Faire revenir oignon, ail, gingembre avec épices.","Ajouter tomates. Cuire 10 min.","Incorporer les légumineuses. Mijoter 45 min.","Ajouter beurre et crème. Cuire 15 min."]},
+{id:128,t:"Plat",e:"🍗",n:"Poulet korma",g:["Plat","Indien","Réconfortant"],tm:"45 min",df:"Moyen",sv:"4",cl:"520 kcal",d:"Curry doux et crémeux de poulet aux amandes, parfumé aux épices douces.",i:["700g blanc de poulet","150ml crème fraîche","100g amandes en poudre","1 oignon","Gingembre","Ail","Garam masala","Cardamome","Safran","Yaourt"],s:["Faire revenir oignon, ail, gingembre.","Ajouter épices et amandes en poudre.","Incorporer yaourt, safran et crème.","Ajouter le poulet. Mijoter 30 min.","Servir avec riz basmati et amandes effilées."]},
+{id:129,t:"Plat",e:"🥘",n:"Bœuf stroganoff",g:["Plat","Russe","Réconfortant"],tm:"35 min",df:"Facile",sv:"4",cl:"520 kcal",d:"Le bœuf Stroganoff russe avec sa sauce à la crème sure et aux champignons.",i:["600g filet de bœuf","300g champignons","1 oignon","200ml crème fraîche","1 c.s. moutarde","1 c.s. paprika","Beurre","Persil"],s:["Couper le bœuf en lanières.","Faire sauter oignon et champignons dans le beurre.","Réserver. Saisir le bœuf très rapidement.","Remettre légumes. Ajouter crème, moutarde et paprika.","Mijoter 5 min. Garnir de persil."]},
+{id:130,t:"Plat",e:"🍜",n:"Wok de légumes sautés",g:["Plat","Asiatique","Vegan","Végétarien","Rapide","Healthy"],tm:"15 min",df:"Facile",sv:"4",cl:"240 kcal",d:"Un wok coloré de légumes croquants aux saveurs asiatiques.",i:["Poivrons colorés","Brocoli","Carottes","Champignons","Germes de soja","3 gousses d'ail","Gingembre","3 c.s. sauce soja","Huile de sésame"],s:["Couper tous les légumes en morceaux de même taille.","Chauffer wok à feu très vif.","Faire sauter ail et gingembre 30 sec.","Ajouter légumes durs en premier, puis tendres.","Assaisonner avec soja et sésame."]},
+{id:131,t:"Plat",e:"🐟",n:"Cabillaud au four",g:["Plat","Français","Healthy","Sans gluten"],tm:"30 min",df:"Facile",sv:"4",cl:"280 kcal",d:"Un cabillaud tendre cuit au four sur lit de légumes méditerranéens.",i:["4 dos de cabillaud","2 courgettes","2 tomates","1 poivron","2 gousses d'ail","Citron","Thym","Huile d'olive"],s:["Préchauffer le four à 200°C.","Couper les légumes en morceaux. Disposer dans le plat avec ail et thym.","Arroser d'huile. Cuire 15 min.","Déposer le cabillaud sur les légumes. Citronner.","Cuire encore 12-15 min selon épaisseur."]},
+{id:132,t:"Plat",e:"🍝",n:"Bucatini all'Amatriciana",g:["Plat","Italien","Épicé","Rapide"],tm:"25 min",df:"Facile",sv:"4",cl:"580 kcal",d:"Les bucatini romains à la sauce tomate pimentée et au guanciale croustillant.",i:["400g bucatini","200g guanciale","400g tomates pelées","Piment","Pecorino","Sel"],s:["Faire revenir guanciale. Ajouter piment.","Incorporer tomates. Cuire 15 min.","Cuire les bucatini al dente.","Mélanger pâtes et sauce avec eau de cuisson.","Servir avec pecorino râpé."]},
+{id:133,t:"Plat",e:"🥩",n:"Côte de bœuf au four",g:["Plat","Français","Festif"],tm:"30 min",df:"Facile",sv:"4",cl:"680 kcal",d:"Une côte de bœuf au four avec croûte dorée et intérieur rosé parfait.",i:["1 côte de bœuf (1.2kg)","Fleur de sel","Poivre concassé","Beurre","Ail","Romarin","Thym"],s:["Sortir la côte 1h avant. Saler et poivrer généreusement.","Saisir fortement dans une poêle chaude.","Enfourner à 200°C 12-15 min pour saignant.","Arroser de beurre ail-herbes.","Laisser reposer 10 min sous alu. Découper à table."]},
+{id:134,t:"Plat",e:"🍝",n:"Gnocchi à la sauce tomate",g:["Plat","Italien","Végétarien","Rapide"],tm:"20 min",df:"Facile",sv:"4",cl:"420 kcal",d:"Des gnocchi de pommes de terre moelleux dans une sauce tomate maison et basilic.",i:["500g gnocchi frais","400g tomates concassées","2 gousses d'ail","Basilic","Parmesan","Huile d'olive"],s:["Faire revenir l'ail dans l'huile.","Ajouter les tomates. Cuire 15 min.","Cuire les gnocchi dans eau bouillante salée.","Égoutter et mélanger avec la sauce.","Garnir de parmesan et basilic frais."]},
+{id:135,t:"Plat",e:"🥩",n:"Rôti de porc aux herbes",g:["Plat","Français"],tm:"90 min",df:"Facile",sv:"6",cl:"420 kcal",d:"Un rôti de porc moelleux parfumé aux herbes de Provence et à la moutarde.",i:["1.5kg longe de porc","3 c.s. moutarde","Herbes de Provence","4 gousses d'ail","1 oignon","200ml vin blanc","Huile d'olive"],s:["Badigeonner le rôti de moutarde et herbes. Laisser 30 min.","Faire dorer sur toutes les faces.","Disposer dans plat avec oignon, ail et vin.","Rôtir à 180°C 1h15 en arrosant.","Laisser reposer 15 min avant de découper."]},
+{id:136,t:"Plat",e:"🐟",n:"Saumon à la crème d'oseille",g:["Plat","Français"],tm:"20 min",df:"Facile",sv:"4",cl:"440 kcal",d:"Le classique français : saumon rosé et sauce à l'oseille légèrement acidulée.",i:["4 pavés de saumon","200g oseille fraîche","150ml crème fraîche","1 échalote","50ml vin blanc","Beurre","Sel, poivre"],s:["Saisir les pavés côté peau 3-4 min. Retourner 2 min.","Réserver au chaud.","Faire revenir l'échalote. Déglacer au vin blanc.","Ajouter l'oseille et la crème. Cuire 3 min.","Assaisonner. Napper le saumon de sauce."]},
+{id:137,t:"Plat",e:"🍗",n:"Canard à l'orange",g:["Plat","Français","Élégant"],tm:"90 min",df:"Moyen",sv:"4",cl:"560 kcal",d:"Le classique du canard rôti avec sa sauce à l'orange acidulée et caramélisée.",i:["1 canard entier","4 oranges","2 c.s. sucre","2 c.s. vinaigre","200ml bouillon de volaille","Cointreau","Beurre"],s:["Rôtir le canard à 200°C 1h15.","Prélever les zestes d'orange. Blanchir deux fois.","Caraméliser sucre et vinaigre en caramel doré.","Déglacer avec jus d'orange et bouillon.","Lier la sauce avec beurre et cointreau."]},
+{id:138,t:"Plat",e:"🍜",n:"Bibimbap coréen",g:["Plat","Coréen","Asiatique","Healthy","Sans gluten"],tm:"30 min",df:"Moyen",sv:"2",cl:"520 kcal",d:"Le plat coréen emblématique avec riz, légumes variés sautés, œuf et sauce gochujang.",i:["300g riz","1 carotte","1 courgette","200g épinards","100g shiitake","2 œufs","Sauce gochujang","Huile de sésame"],s:["Cuire le riz. Garder au chaud.","Sauter chaque légume séparément avec assaisonnement.","Faire un œuf au plat ou poché.","Assembler : riz, légumes disposés en secteurs, œuf.","Arroser d'huile de sésame. Servir avec gochujang."]},
+{id:139,t:"Plat",e:"🦐",n:"Risotto aux fruits de mer",g:["Plat","Italien","Fruits de mer"],tm:"40 min",df:"Moyen",sv:"4",cl:"540 kcal",d:"Un risotto onctueux aux crevettes, moules et calamars parfumé au safran.",i:["300g riz arborio","300g crevettes","300g moules","200g calamars","150ml vin blanc","1L bouillon poisson","1 oignon","Safran","Parmesan","Beurre"],s:["Faire revenir l'oignon. Nacrer le riz.","Déglacer au vin blanc. Laisser absorber.","Ajouter bouillon et safran louche par louche 18 min.","Faire sauter les fruits de mer séparément.","Mantecare avec beurre-parmesan. Incorporer fruits de mer."]},
+{id:140,t:"Plat",e:"🥩",n:"Porc au lait braisé",g:["Plat","Français","Réconfortant"],tm:"120 min",df:"Moyen",sv:"6",cl:"480 kcal",d:"Un rôti de porc braisé dans du lait qui caramélise et crée une sauce délicieuse.",i:["1.5kg épaule de porc","1L lait entier","6 gousses d'ail","Sauge fraîche","Zeste de citron","Beurre","Sel, poivre"],s:["Faire dorer le rôti sur toutes ses faces.","Ajouter lait, ail, sauge et zeste de citron.","Porter à frémissement. Couvrir partiellement.","Mijoter 1h30 en retournant régulièrement.","Le lait caramélise en sauce parfumée."]},
+{id:141,t:"Plat",e:"🍗",n:"Poulet tandoori",g:["Plat","Indien","Épicé","Healthy","Sans gluten"],tm:"40 min",df:"Facile",sv:"4",cl:"340 kcal",d:"Poulet mariné au yaourt et épices tandoori, cuit au four avec peau légèrement dorée.",i:["800g pilons de poulet","200g yaourt","2 c.s. garam masala","1 c.s. curcuma","1 c.s. paprika","Gingembre","Ail","Jus de citron","Coriandre"],s:["Inciser profondément le poulet.","Mélanger yaourt, épices, ail, gingembre et citron.","Mariner au moins 2h.","Cuire à 220°C 25-30 min.","Garnir de coriandre et rondelles d'oignon."]},
+{id:142,t:"Plat",e:"🥘",n:"Caponata sicilienne",g:["Plat","Italien","Vegan","Végétarien","Méditerranéen"],tm:"50 min",df:"Facile",sv:"6",cl:"220 kcal",d:"La caponata agrodolce sicilienne aux aubergines, câpres et olives.",i:["2 aubergines","3 branches céleri","1 oignon","100g olives vertes","3 c.s. câpres","400g tomates concassées","3 c.s. vinaigre de vin","2 c.s. sucre","Basilic"],s:["Faire revenir les aubergines en cubes dans l'huile.","Faire revenir oignon et céleri séparément.","Mélanger tout avec tomates, câpres et olives.","Ajouter vinaigre et sucre.","Mijoter 25 min. Garnir de basilic."]},
+{id:143,t:"Plat",e:"🍜",n:"Tom yum aux crevettes",g:["Plat","Thaïlandais","Asiatique","Épicé","Sans gluten"],tm:"25 min",df:"Facile",sv:"4",cl:"200 kcal",d:"La soupe thaïlandaise épicée et acidulée aux crevettes et champignons.",i:["400g crevettes","200g champignons shiitake","1.5L bouillon","3 citronnelles","5 feuilles kafir","3cm galanga","Sauce poisson","Jus de citron vert","Piment","Coriandre"],s:["Porter le bouillon à frémissement.","Ajouter citronnelle, kafir, galanga et piment.","Incorporer champignons et crevettes.","Cuire 5 min.","Assaisonner avec sauce poisson et citron vert."]},
+{id:144,t:"Plat",e:"🥘",n:"Fondue savoyarde",g:["Plat","Français","Hiver","Festif"],tm:"20 min",df:"Facile",sv:"4",cl:"680 kcal",d:"La fondue savoyarde avec Comté, Beaufort et Emmental dans un vin blanc de Savoie.",i:["400g Emmental","200g Comté","200g Beaufort","300ml vin blanc Savoie","1 gousse d'ail","1 c.s. Maïzena","Poivre","Muscade","Pain de campagne"],s:["Frotter le caquelon avec l'ail.","Chauffer le vin à feu moyen.","Ajouter les fromages râpés progressivement.","Délayer la Maïzena dans vin froid. Incorporer.","Assaisonner. Maintenir à feu doux."]},
+{id:145,t:"Plat",e:"🍗",n:"Escalopes milanaises",g:["Plat","Italien","Rapide"],tm:"20 min",df:"Facile",sv:"4",cl:"480 kcal",d:"Des escalopes de poulet panées au parmesan, croustillantes et dorées.",i:["4 escalopes de poulet","2 œufs","100g chapelure","50g parmesan râpé","Farine","Beurre","Citron","Sel, poivre"],s:["Aplatir les escalopes.","Passer dans la farine, puis l'œuf battu, puis mélange chapelure-parmesan.","Faire dorer dans le beurre mousseux 4 min par face.","Égoutter sur papier absorbant.","Servir avec quartiers de citron."]},
+{id:146,t:"Plat",e:"🥘",n:"Tian provençal",g:["Plat","Français","Végétarien","Vegan","Été"],tm:"70 min",df:"Facile",sv:"4",cl:"200 kcal",d:"Le gratin provençal de légumes d'été en fines tranches, parfumé aux herbes.",i:["3 courgettes","3 tomates","2 aubergines","2 oignons","4 gousses d'ail","Herbes de Provence","Huile d'olive"],s:["Émincer oignons. Faire fondre dans l'huile.","Étaler dans le plat.","Trancher finement courgettes, tomates et aubergines.","Disposer en rosace en alternant les légumes.","Arroser d'huile, herbes et ail. Cuire à 180°C 50 min."]},
+{id:147,t:"Plat",e:"🍜",n:"Gyoza poêlés",g:["Plat","Japonais","Asiatique"],tm:"40 min",df:"Moyen",sv:"4",cl:"340 kcal",d:"Gyoza croustillants d'un côté et vapeur de l'autre, farcis au porc et chou.",i:["30 pâtes à gyoza","300g porc haché","200g chou chinois","2 oignons verts","Gingembre","Sauce soja","Huile de sésame","Ail"],s:["Mélanger porc haché, chou émincé, oignons, gingembre, ail et huile de sésame.","Farcir les pâtes. Plisser les bords.","Faire chauffer l'huile dans une poêle.","Saisir les gyoza à plat 2 min. Ajouter 50ml d'eau.","Couvrir et cuire 5 min à vapeur. Découvrir pour croquer."]},
+{id:148,t:"Plat",e:"🍝",n:"Pâtes aux anchois et olives",g:["Plat","Italien","Rapide","Méditerranéen"],tm:"15 min",df:"Facile",sv:"4",cl:"450 kcal",d:"Pâtes méditerranéennes express aux anchois, câpres, olives et tomates cerises.",i:["400g linguine","8 anchois","100g olives noires","3 c.s. câpres","300g tomates cerises","4 gousses d'ail","Piment","Persil"],s:["Faire revenir ail et piment dans l'huile.","Ajouter anchois, les laisser fondre.","Incorporer tomates cerises, câpres et olives.","Cuire les linguine al dente.","Mélanger pâtes et sauce. Garnir de persil."]},
+{id:149,t:"Plat",e:"🍛",n:"Vindaloo de porc",g:["Plat","Indien","Épicé"],tm:"60 min",df:"Moyen",sv:"4",cl:"420 kcal",d:"Le curry de porc très épicé de Goa, mariné au vinaigre et aux piments.",i:["600g échine de porc","6 piments rouges séchés","1 c.s. cumin","Coriandre","Vinaigre de cidre","3 gousses d'ail","Gingembre","1 oignon"],s:["Mixer piments, épices, ail, gingembre et vinaigre.","Mariner le porc 2h dans cette marinade.","Faire revenir l'oignon.","Ajouter porc et marinade. Cuire 45 min.","Ajuster le sel et le piquant."]},
+{id:150,t:"Plat",e:"🥩",n:"Côtes d'agneau grillées",g:["Plat","Français","Rapide","Sans gluten"],tm:"15 min",df:"Facile",sv:"2",cl:"420 kcal",d:"Des côtes d'agneau grillées marinées à la persillade, simples et savoureuses.",i:["8 côtes d'agneau","3 gousses d'ail","Romarin","Persil","3 c.s. huile d'olive","Moutarde","Sel, poivre"],s:["Badigeonner les côtes de moutarde, ail et herbes.","Mariner 30 min.","Préchauffer le gril ou barbecue.","Griller 3-4 min par face selon épaisseur.","Laisser reposer 2 min. Servir."]},
+{id:151,t:"Plat",e:"🍜",n:"Noodles sautées au porc",g:["Plat","Asiatique","Rapide"],tm:"20 min",df:"Facile",sv:"2",cl:"480 kcal",d:"Des noodles sautées au porc effiloché avec légumes croquants et sauce oyster.",i:["200g nouilles aux œufs","200g porc haché","Chou chinois","Carottes","Oignons verts","2 c.s. sauce huître","1 c.s. sauce soja","Huile de sésame","Ail","Gingembre"],s:["Cuire les nouilles. Réserver.","Faire sauter porc, ail et gingembre au wok.","Ajouter les légumes. Sauter 3 min.","Incorporer les nouilles.","Assaisonner avec sauces et huile de sésame."]},
+{id:152,t:"Plat",e:"🥩",n:"Filet de porc aux champignons",g:["Plat","Français","Rapide"],tm:"25 min",df:"Facile",sv:"4",cl:"380 kcal",d:"Un filet de porc tendre avec une sauce aux champignons et à la crème.",i:["600g filet de porc","300g champignons de Paris","1 échalote","100ml crème fraîche","50ml vin blanc","Beurre","Thym"],s:["Couper le filet en médaillons.","Faire dorer dans le beurre 3 min par face. Réserver.","Faire revenir échalote et champignons.","Déglacer au vin. Ajouter crème et thym.","Remettre le porc. Cuire 5 min."]},
+{id:153,t:"Plat",e:"🍗",n:"Bœuf au basilic thaï",g:["Plat","Thaïlandais","Asiatique","Épicé","Rapide"],tm:"15 min",df:"Facile",sv:"2",cl:"400 kcal",d:"Le pad kra pao, sauté de bœuf haché au basilic thaï, plat de rue thaïlandais.",i:["300g bœuf haché","Basilic thaï","4 gousses d'ail","3 piments","2 c.s. sauce huître","1 c.s. sauce soja","1 c.s. sauce poisson","2 œufs frits"],s:["Chauffer le wok à feu très vif.","Faire sauter ail et piment 30 sec.","Ajouter le bœuf haché. Sauter en émiettant.","Assaisonner avec les sauces.","Terminer avec le basilic thaï. Servir avec œuf frit."]},
+{id:154,t:"Plat",e:"🐟",n:"Crevettes au curry coco",g:["Plat","Asiatique","Rapide","Sans gluten"],tm:"20 min",df:"Facile",sv:"4",cl:"380 kcal",d:"Des crevettes juteuses dans une sauce curry-coco parfumée au gingembre.",i:["500g crevettes","400ml lait de coco","2 c.s. pâte curry","Citronnelle","Gingembre","Citron vert","Coriandre","Riz jasmin"],s:["Faire revenir la pâte de curry avec citronnelle.","Ajouter le lait de coco. Porter à frémissement.","Incorporer les crevettes. Cuire 4 min.","Assaisonner avec jus de citron vert.","Garnir de coriandre. Servir sur riz jasmin."]},
+{id:155,t:"Plat",e:"🥘",n:"Cassoulet de légumes",g:["Plat","Français","Vegan","Végétarien"],tm:"60 min",df:"Facile",sv:"4",cl:"380 kcal",d:"Version végétarienne du cassoulet avec haricots blancs et légumes confits.",i:["500g haricots blancs","Saucisses végétales","1 oignon","4 tomates","4 gousses d'ail","Bouquet garni","Chapelure","Huile d'olive"],s:["Cuire les haricots blancs 45 min.","Faire revenir oignon et ail.","Ajouter tomates, saucisses végétales et bouquet garni.","Incorporer haricots. Disposer dans plat.","Couvrir de chapelure. Gratiner 20 min."]},
+{id:156,t:"Plat",e:"🍜",n:"Khao pad riz sauté thaï",g:["Plat","Thaïlandais","Asiatique","Rapide"],tm:"15 min",df:"Facile",sv:"2",cl:"440 kcal",d:"Le riz sauté thaïlandais avec basilic thaï et œuf, simple et parfumé.",i:["300g riz cuit de la veille","2 œufs","150g poulet ou crevettes","Basilic thaï","3 gousses d'ail","2 c.s. sauce soja","1 c.s. sauce huître","Piment"],s:["Chauffer le wok à feu très vif.","Faire sauter l'ail, puis la protéine.","Ajouter le riz froid. Sauter à feu vif.","Pousser sur le côté. Brouiller les œufs.","Mélanger. Assaisonner et terminer avec le basilic."]},
+{id:157,t:"Plat",e:"🥘",n:"Gratin de pommes de terre au reblochon",g:["Plat","Français","Réconfortant","Hiver"],tm:"60 min",df:"Facile",sv:"6",cl:"620 kcal",d:"La tartiflette savoyarde avec pommes de terre, lardons, oignons et reblochon fondu.",i:["1.2kg pommes de terre","200g lardons","2 oignons","1 reblochon entier","200ml crème fraîche","100ml vin blanc","Beurre"],s:["Cuire les pommes de terre. Éplucher et trancher.","Faire revenir lardons et oignons.","Déglacer au vin blanc.","Mélanger pommes de terre, lardons et crème.","Disposer dans plat. Couvrir de reblochon. Cuire 25 min à 200°C."]},
+{id:158,t:"Plat",e:"🍝",n:"Tagliatelles aux truffes",g:["Plat","Italien","Élégant"],tm:"15 min",df:"Facile",sv:"4",cl:"580 kcal",d:"Des tagliatelles fraîches au beurre de truffe et parmesan, le luxe simplissime.",i:["400g tagliatelles fraîches","80g beurre","30g truffe râpée ou huile de truffe","100g parmesan","Fleur de sel","Poivre noir"],s:["Cuire les tagliatelles al dente 3 min.","Faire fondre le beurre à feu doux.","Égoutter les pâtes, réserver l'eau de cuisson.","Mélanger pâtes, beurre fondu et truffe.","Ajouter parmesan et eau de cuisson pour lier."]},
+{id:159,t:"Plat",e:"🥘",n:"Ragoût de légumes printaniers",g:["Plat","Français","Vegan","Végétarien","Healthy","Sans gluten"],tm:"40 min",df:"Facile",sv:"4",cl:"220 kcal",d:"Un ragoût printanier de légumes nouveaux, léger et parfumé aux herbes fraîches.",i:["Carottes nouvelles","Navets nouveaux","Petits pois","Asperges","Artichauds","Oignons grelots","Bouillon légumes","Beurre","Menthe","Persil"],s:["Faire revenir les oignons grelots dans le beurre.","Ajouter carottes et navets. Cuire 10 min.","Incorporer petits pois et bouillon.","Ajouter asperges et artichauds 10 min avant la fin.","Garnir de menthe et persil frais."]},
+{id:160,t:"Plat",e:"🍗",n:"Pintade aux champignons",g:["Plat","Français","Élégant"],tm:"70 min",df:"Moyen",sv:"4",cl:"520 kcal",d:"Une pintade mijotée avec des champignons sauvages dans une crème parfumée.",i:["1 pintade découpée","400g champignons","2 échalotes","150ml vin blanc","200ml crème fraîche","Thym","Beurre"],s:["Faire dorer les morceaux de pintade. Réserver.","Faire revenir échalotes et champignons dans le beurre.","Déglacer au vin blanc.","Remettre la pintade avec le thym et la crème.","Mijoter 45 min."]},
+{id:161,t:"Plat",e:"🥩",n:"Navarin d'agneau printanier",g:["Plat","Français","Réconfortant"],tm:"90 min",df:"Moyen",sv:"4",cl:"460 kcal",d:"Le navarin printanier avec agneau et légumes nouveaux de saison.",i:["1kg épaule d'agneau","Carottes nouvelles","Navets","Petits pois","Pommes de terre","1 oignon","Bouquet garni","Farine"],s:["Faire dorer l'agneau en morceaux. Saupoudrer de farine.","Ajouter oignon, bouquet garni et eau. Mijoter 45 min.","Ajouter carottes, navets et pommes de terre.","Cuire 25 min.","Incorporer petits pois 5 min avant."]},
+{id:162,t:"Plat",e:"🐟",n:"Loup en croûte de sel",g:["Plat","Français","Élégant","Sans gluten"],tm:"45 min",df:"Moyen",sv:"4",cl:"320 kcal",d:"Un loup entier cuit dans une croûte de sel qui protège et parfume le poisson.",i:["1 loup entier (1kg)","2kg gros sel","2 blancs d'œufs","Fenouil","Thym","Laurier","Citron"],s:["Farcir le poisson de fenouil, thym et citron.","Mélanger gros sel et blancs d'œufs.","Étaler une couche de sel dans le plat.","Déposer le poisson. Recouvrir totalement de sel.","Cuire à 220°C 30 min. Casser la croûte à table."]},
+{id:163,t:"Plat",e:"🍛",n:"Curry de pois chiches épinards",g:["Plat","Indien","Vegan","Végétarien","Healthy","Sans gluten"],tm:"30 min",df:"Facile",sv:"4",cl:"320 kcal",d:"Un curry végétalien rapide avec pois chiches, épinards et lait de coco.",i:["2 boîtes pois chiches","300g épinards","400ml lait de coco","400g tomates concassées","1 oignon","3 gousses d'ail","Gingembre","Curry","Curcuma","Coriandre"],s:["Faire revenir oignon, ail, gingembre avec épices.","Ajouter tomates. Cuire 10 min.","Incorporer les pois chiches et le lait de coco.","Mijoter 10 min. Ajouter les épinards.","Cuire 3 min. Garnir de coriandre."]},
+{id:164,t:"Plat",e:"🥘",n:"Bœuf aux brocolis",g:["Plat","Asiatique","Rapide","Sans gluten"],tm:"20 min",df:"Facile",sv:"4",cl:"380 kcal",d:"Le classique : bœuf sauté et brocolis dans une sauce au soja et huître.",i:["400g filet de bœuf","1 brocoli","3 gousses d'ail","Gingembre","3 c.s. sauce soja","2 c.s. sauce huître","1 c.s. Maïzena","Huile"],s:["Mariner le bœuf tranché avec soja et Maïzena 15 min.","Blanchir les fleurettes de brocoli 2 min.","Sauter le bœuf au wok très chaud. Réserver.","Faire sauter brocoli avec ail et gingembre.","Ajouter le bœuf et la sauce huître."]},
+{id:165,t:"Plat",e:"🍜",n:"Pho ga au poulet",g:["Plat","Vietnamien","Asiatique"],tm:"90 min",df:"Moyen",sv:"4",cl:"380 kcal",d:"La version poulet du pho vietnamien, bouillon clair et parfumé.",i:["1 poulet entier","200g nouilles de riz","2 oignons","5cm gingembre","Anis étoilé","Cannelle","Sauce nuoc-mâm","Pousses de soja","Basilic thaï","Citron vert"],s:["Pocher le poulet entier avec aromates 1h.","Griller oignons et gingembre.","Filtrer le bouillon. Assaisonner au nuoc-mâm.","Effilocher le poulet.","Servir bouillon sur nouilles avec poulet et herbes."]},
+{id:166,t:"Plat",e:"🍗",n:"Poulet au vin blanc et champignons",g:["Plat","Français","Réconfortant"],tm:"55 min",df:"Facile",sv:"4",cl:"420 kcal",d:"Un poulet mijoté dans un vin blanc parfumé avec des champignons et de la crème.",i:["1 poulet découpé","300g champignons","2 échalotes","200ml vin blanc","150ml crème fraîche","Thym","Beurre","Sel, poivre"],s:["Faire dorer les morceaux de poulet dans le beurre.","Faire revenir les échalotes. Déglacer au vin blanc.","Remettre le poulet avec le thym.","Mijoter 30 min à couvert.","Ajouter champignons et crème. Cuire 10 min."]},
+{id:167,t:"Plat",e:"🥘",n:"Feijoada brésilienne",g:["Plat","Brésilien","Réconfortant"],tm:"180 min",df:"Moyen",sv:"8",cl:"580 kcal",d:"Le plat national brésilien, ragoût de haricots noirs aux viandes fumées.",i:["500g haricots noirs","500g côtes porc fumées","300g saucisse fumée","200g lardons","1 oignon","4 gousses d'ail","Laurier","Orange","Riz blanc"],s:["Tremper les haricots une nuit.","Cuire les haricots 1h avec les viandes.","Faire revenir oignon et ail. Ajouter aux haricots.","Incorporer laurier. Mijoter 1h.","Servir avec riz, oranges et chou frisé sauté."]},
+{id:168,t:"Plat",e:"🐟",n:"Poké bowl au saumon",g:["Plat","Hawaien","Healthy","Sans gluten"],tm:"20 min",df:"Facile",sv:"2",cl:"520 kcal",d:"Le poké hawaïen avec saumon mariné au soja, riz aux algues et légumes.",i:["200g saumon frais","200g riz à sushi cuit","1 avocat","Edamame","Algues wakame","3 c.s. sauce soja","1 c.c. sésame","Gingembre mariné","Graines de sésame"],s:["Couper le saumon en cubes. Mariner 15 min avec soja, sésame.","Préparer le riz avec du vinaigre de riz.","Hydrater les algues wakame.","Assembler les bols : riz, algues, saumon, légumes.","Saupoudrer de graines de sésame."]},
+{id:169,t:"Plat",e:"🥩",n:"Veau Marengo",g:["Plat","Français","Réconfortant"],tm:"90 min",df:"Moyen",sv:"6",cl:"420 kcal",d:"Le veau Marengo, ragoût de veau aux tomates et champignons, créé pour Napoléon.",i:["1.2kg veau","400g tomates concassées","300g champignons","1 oignon","3 gousses d'ail","150ml vin blanc","Bouquet garni","Farine","Persil"],s:["Couper le veau en morceaux. Fariner légèrement.","Faire dorer dans l'huile. Réserver.","Faire revenir oignon et ail.","Ajouter tomates, vin blanc et bouquet garni.","Remettre le veau. Mijoter 1h. Ajouter champignons 20 min avant."]},
+{id:170,t:"Plat",e:"🍛",n:"Aloo gobi",g:["Plat","Indien","Vegan","Végétarien","Healthy","Sans gluten"],tm:"35 min",df:"Facile",sv:"4",cl:"260 kcal",d:"Le curry sec indien de pommes de terre et chou-fleur, parfumé au curcuma.",i:["500g pommes de terre","1 chou-fleur","1 oignon","3 gousses d'ail","Gingembre","Curcuma","Cumin","Coriandre","Garam masala","Huile"],s:["Couper légumes en morceaux.","Faire revenir oignon, ail, gingembre avec épices.","Ajouter les légumes. Enrober d'épices.","Couvrir et cuire 20 min en remuant.","Garnir de coriandre fraîche."]},
+{id:171,t:"Plat",e:"🥘",n:"Rendang de bœuf",g:["Plat","Indonésien","Épicé","Asiatique"],tm:"150 min",df:"Difficile",sv:"4",cl:"560 kcal",d:"Le rendang indonésien, bœuf braisé longuement dans le lait de coco et les épices.",i:["1kg bœuf à braiser","400ml lait de coco","3 piments","3 citronnelles","5cm galanga","Curcuma","Cardamome","Ail","Échalotes"],s:["Mixer piments, citronnelle, galanga, ail et épices.","Faire revenir le bœuf en cubes avec la pâte.","Ajouter le lait de coco.","Mijoter 2h30 jusqu'à absorption du liquide.","La viande doit être sèche et très foncée."]},
+{id:172,t:"Plat",e:"🍝",n:"Lasagne au pesto végétarienne",g:["Plat","Italien","Végétarien"],tm:"60 min",df:"Moyen",sv:"6",cl:"480 kcal",d:"Des lasagnes végétariennes avec pesto maison, légumes grillés et ricotta.",i:["12 feuilles lasagne","500g ricotta","200g pesto","Courgettes","Poivrons","Aubergines","Parmesan","Mozzarella"],s:["Faire griller les légumes en tranches.","Mélanger ricotta et pesto.","Alterner lasagne, mélange ricotta-pesto, légumes.","Terminer par mozzarella et parmesan.","Cuire à 180°C 35 min."]},
+{id:173,t:"Plat",e:"🥩",n:"Filet de bœuf Wellington",g:["Plat","Britannique","Festif"],tm:"90 min",df:"Difficile",sv:"6",cl:"680 kcal",d:"Le célèbre bœuf Wellington enveloppé de duxelles de champignons et pâte feuilletée.",i:["1kg filet de bœuf","400g champignons","200g pâté de foie","1 rouleau pâte feuilletée","2 gousses d'ail","Thym","Moutarde","1 œuf"],s:["Saisir le filet sur toutes les faces. Badigeonner de moutarde.","Mixer champignons en duxelles avec ail et thym. Cuire à sec.","Étaler pâte. Déposer pâté, duxelles et filet. Enrouler.","Dorer à l'œuf. Cuire à 220°C 25 min pour saignant.","Laisser reposer 10 min. Trancher."]},
+{id:174,t:"Plat",e:"🦐",n:"Gambas à la plancha",g:["Plat","Espagnol","Rapide","Sans gluten","Fruits de mer"],tm:"10 min",df:"Facile",sv:"2",cl:"220 kcal",d:"Des gambas grillées à la plancha, simplement assaisonnées à l'ail et au piment.",i:["500g gambas","4 gousses d'ail","Piment","Persil","Huile d'olive","Citron","Sel"],s:["Inciser les gambas sur le dos.","Préparer persillade ail-persil.","Faire chauffer la plancha à feu très vif.","Saisir les gambas 2 min par face.","Arroser de persillade et servir avec citron."]},
+{id:175,t:"Plat",e:"🥘",n:"Poitrine de porc confite",g:["Plat","Français","Réconfortant"],tm:"180 min",df:"Facile",sv:"6",cl:"640 kcal",d:"Une poitrine de porc confite longuement au four, croustillante et fondante.",i:["1.5kg poitrine de porc","Sel de mer","Poivre","Thym","Laurier","Ail","Huile d'olive"],s:["Saler généreusement la poitrine. Laisser 1h.","Rincer et sécher.","Placer dans plat avec herbes et ail.","Cuire à 150°C 2h30.","Monter à 220°C 20 min pour croustiller."]},
+{id:176,t:"Plat",e:"🍗",n:"Agneau aux flageolets",g:["Plat","Français","Réconfortant"],tm:"150 min",df:"Moyen",sv:"6",cl:"540 kcal",d:"La gigot d'agneau confite avec ses flageolets, le classique du dimanche.",i:["1 gigot d'agneau","500g flageolets secs","4 gousses d'ail","Romarin","Thym","1 oignon","2 carottes","200ml vin blanc"],s:["Piquer le gigot avec l'ail et le romarin.","Faire dorer. Mettre dans plat avec légumes et vin.","Cuire à 180°C 1h30.","Cuire les flageolets séparément avec bouquet garni.","Dresser gigot sur flageolets."]},
+{id:177,t:"Plat",e:"🍝",n:"Pasta e fagioli",g:["Plat","Italien","Vegan","Végétarien","Réconfortant"],tm:"35 min",df:"Facile",sv:"4",cl:"420 kcal",d:"Le plat rustique napolitain de haricots et petites pâtes, crémeux et nourrissant.",i:["400g haricots borlotti","200g petites pâtes","2 gousses d'ail","1 branche romarin","400g tomates concassées","Parmesan","Huile d'olive","Sel, poivre"],s:["Faire revenir l'ail et le romarin dans l'huile.","Ajouter les tomates. Cuire 5 min.","Ajouter les haricots égouttés. Écraser partiellement.","Couvrir d'eau. Porter à frémissement.","Cuire les pâtes dans la soupe. Servir avec parmesan."]},
+{id:178,t:"Plat",e:"🥩",n:"Carré d'agneau en croûte d'herbes",g:["Plat","Français","Élégant"],tm:"30 min",df:"Moyen",sv:"4",cl:"520 kcal",d:"Un carré d'agneau rôti avec une croûte d'herbes vertes et moutarde.",i:["2 carrés d'agneau","50g chapelure","Persil","Romarin","Thym","3 gousses d'ail","Moutarde","Huile d'olive"],s:["Saisir les carrés sur toutes les faces.","Badigeonner de moutarde.","Mélanger chapelure, herbes et ail haché.","Appliquer la croûte sur les carrés.","Cuire à 200°C 15 min pour rosé. Reposer 5 min."]},
+{id:179,t:"Plat",e:"🐟",n:"Sardines grillées au four",g:["Plat","Méditerranéen","Rapide","Sans gluten","Healthy"],tm:"20 min",df:"Facile",sv:"4",cl:"320 kcal",d:"Des sardines fraîches grillées, parfumées au citron et aux herbes.",i:["12 sardines fraîches","3 gousses d'ail","Persil","Citron","Huile d'olive","Sel, poivre","Piment"],s:["Préchauffer le four à 220°C (gril).","Nettoyer les sardines. Inciser les flancs.","Préparer persillade : persil, ail, citron, huile.","Garnir les sardines de persillade.","Griller 6-8 min. Servir avec citron."]},
+{id:180,t:"Plat",e:"🍛",n:"Chicken saag",g:["Plat","Indien","Épicé"],tm:"50 min",df:"Moyen",sv:"4",cl:"400 kcal",d:"Le curry de poulet aux épinards, une combinaison indienne riche et parfumée.",i:["600g blanc de poulet","500g épinards","1 oignon","3 gousses d'ail","Gingembre","Garam masala","Cumin","Coriandre","Crème fraîche"],s:["Faire dorer le poulet. Réserver.","Faire revenir oignon, ail, gingembre avec épices.","Ajouter les épinards. Mixer en purée.","Remettre le poulet. Mijoter 25 min.","Incorporer la crème. Assaisonner."]},
+{id:181,t:"Plat",e:"🥘",n:"Bourride sétoise",g:["Plat","Français","Fruits de mer"],tm:"45 min",df:"Moyen",sv:"4",cl:"420 kcal",d:"La bourride du Sète, ragoût de poissons blancs lié à l'aïoli.",i:["1kg poissons blancs","Aïoli maison","Pommes de terre","1 oignon","Fenouil","Bouquet garni","Safran","Pain grillé"],s:["Préparer un court-bouillon avec oignon, fenouil, safran.","Cuire les pommes de terre dans le bouillon.","Pocher les poissons 10 min.","Retirer poissons et légumes. Filtrer le bouillon.","Lier le bouillon avec l'aïoli. Servir ensemble."]},
+{id:182,t:"Plat",e:"🍗",n:"Pilons de poulet au four croustillants",g:["Plat","Français","Rapide","Sans gluten"],tm:"45 min",df:"Facile",sv:"4",cl:"380 kcal",d:"Des pilons de poulet marinés et rôtis au four jusqu'à la peau dorée et croustillante.",i:["8 pilons de poulet","2 c.s. paprika","1 c.c. cumin","1 c.c. ail en poudre","2 c.s. huile d'olive","Jus de citron","Sel, poivre"],s:["Mélanger épices, huile et jus de citron.","Badigeonner les pilons généreusement.","Mariner 30 min minimum.","Rôtir à 200°C 35-40 min en retournant à mi-cuisson.","Servir avec pommes de terre rôties."]},
+{id:183,t:"Plat",e:"🥩",n:"Entrecôte sauce bordelaise",g:["Plat","Français"],tm:"25 min",df:"Moyen",sv:"2",cl:"640 kcal",d:"Une entrecôte saignante nappée de la classique sauce bordelaise au vin rouge.",i:["2 entrecôtes","300ml bordeaux rouge","3 échalotes","50g beurre","Thym","Laurier","Moelle de bœuf"],s:["Faire réduire le vin avec échalotes, thym et laurier de moitié.","Faire un roux léger. Incorporer le vin réduit. Cuire 10 min.","Monter au beurre froid. Ajouter la moelle.","Saisir les entrecôtes dans beurre très chaud.","Napper de sauce bordelaise."]},
+{id:184,t:"Plat",e:"🍛",n:"Moqueca brésilienne",g:["Plat","Brésilien","Fruits de mer","Épicé"],tm:"40 min",df:"Moyen",sv:"4",cl:"420 kcal",d:"Le ragoût de poissons brésilien au lait de coco et dendê, parfumé à la coriandre.",i:["600g poissons blancs","300g crevettes","400ml lait de coco","2 tomates","1 poivron","1 oignon","Ail","Coriandre","Jus de citron vert","Piment"],s:["Mariner le poisson avec citron, sel et ail.","Faire revenir oignon, ail et poivron.","Ajouter tomates et piment. Cuire 5 min.","Verser le lait de coco. Porter à frémissement.","Ajouter poissons et crevettes. Cuire 10 min."]},
+{id:185,t:"Plat",e:"🥘",n:"Choucroute garnie alsacienne",g:["Plat","Alsacien","Français","Hiver"],tm:"120 min",df:"Facile",sv:"6",cl:"680 kcal",d:"La choucroute alsacienne avec saucisses, jambonneaux et pommes de terre.",i:["1.2kg choucroute","300g lardons","4 saucisses de Strasbourg","2 jambonneaux","4 pommes de terre","1 oignon","Baies de genièvre","Vin blanc d'Alsace"],s:["Rincer et égoutter la choucroute.","Faire revenir lardons et oignon.","Ajouter choucroute, épices et vin blanc.","Disposer les viandes sur la choucroute.","Couvrir et cuire 1h30. Ajouter pommes de terre 30 min avant."]},
+{id:186,t:"Plat",e:"🍝",n:"Pasta al forno",g:["Plat","Italien","Réconfortant"],tm:"60 min",df:"Moyen",sv:"6",cl:"580 kcal",d:"Les pâtes au four à l'italienne avec boulettes, sauce tomate et mozzarella gratinée.",i:["400g rigatoni","400g bœuf haché","400g tomates","200g mozzarella","100g parmesan","1 oignon","Ail","Basilic","Huile d'olive"],s:["Faire les boulettes avec le bœuf haché. Faire dorer.","Préparer la sauce tomate avec oignon, ail et basilic.","Cuire les pâtes al dente.","Mélanger pâtes, sauce et boulettes dans le plat.","Couvrir de mozzarella et parmesan. Gratiner 25 min."]},
+{id:187,t:"Plat",e:"🥩",n:"Côte de veau à la normande",g:["Plat","Français","Élégant"],tm:"30 min",df:"Moyen",sv:"2",cl:"520 kcal",d:"Une côte de veau tendre nappée d'une sauce crémeuse aux champignons et calvados.",i:["2 côtes de veau","200g champignons","1 échalote","50ml calvados","150ml crème fraîche","Beurre","Thym","Sel, poivre"],s:["Saisir les côtes dans le beurre mousseux 4 min par face.","Flamber au calvados.","Retirer et réserver sous alu.","Faire revenir échalote et champignons.","Ajouter crème et thym. Remettre les côtes."]},
+{id:188,t:"Plat",e:"🍜",n:"Ramen tonkotsu",g:["Plat","Japonais","Asiatique","Réconfortant"],tm:"240 min",df:"Difficile",sv:"4",cl:"640 kcal",d:"Le ramen au bouillon de porc crémeux et riche, le plus intense de tous les ramen.",i:["Os de porc (1kg)","200g ramen frais","4 œufs mollets","100g porc rôti (chashu)","Nori","Oignons verts","Maïs","Gingembre","Ail","Gros sel"],s:["Blanchir les os de porc. Couvrir d'eau froide. Mijoter 4h à bouillonnement.","Le bouillon doit devenir blanc et crémeux.","Assaisonner avec soja, sel et gingembre.","Cuire les ramen.","Assembler les bols avec toutes les garnitures."]},
+{id:189,t:"Plat",e:"🐟",n:"Dorade en papillote",g:["Plat","Français","Healthy","Sans gluten"],tm:"30 min",df:"Facile",sv:"4",cl:"280 kcal",d:"Des dorades en papillote avec légumes et herbes, cuisson vapeur parfumée.",i:["2 dorades entières","Tomates cerises","Courgettes","Ail","Citron","Thym","Huile d'olive","Sel, poivre"],s:["Préchauffer le four à 200°C.","Couper les légumes en rondelles fines.","Disposer les légumes sur les feuilles de papier cuisson.","Déposer les dorades. Ajouter citron, ail et thym.","Fermer les papillotes. Cuire 20 min."]},
+{id:190,t:"Plat",e:"🥘",n:"Cassoulet toulousain",g:["Plat","Français","Réconfortant"],tm:"180 min",df:"Difficile",sv:"6",cl:"780 kcal",d:"Le monument du Sud-Ouest : haricots blancs, confit de canard et saucisses de Toulouse.",i:["500g haricots blancs secs","4 cuisses confit de canard","4 saucisses de Toulouse","200g poitrine fumée","1 oignon","4 tomates","1 tête d'ail","Bouquet garni"],s:["Tremper haricots 12h. Cuire 1h avec poitrine.","Faire dorer saucisses et viandes.","Assembler haricots, viandes, tomates, ail dans cocotte.","Cuire au four à 150°C 2h.","Briser la croûte 3 fois pendant cuisson."]},
+{id:191,t:"Plat",e:"🍛",n:"Curry de poulet à la noix de coco",g:["Plat","Asiatique","Rapide","Sans gluten"],tm:"25 min",df:"Facile",sv:"4",cl:"440 kcal",d:"Un curry de poulet rapide et crémeux au lait de coco et au curry jaune.",i:["600g blanc de poulet","400ml lait de coco","2 c.s. curry jaune","1 oignon","3 gousses d'ail","Gingembre","Citron vert","Coriandre","Riz jasmin"],s:["Faire revenir oignon, ail et gingembre.","Ajouter le poulet en morceaux. Dorer.","Incorporer la poudre de curry. Mélanger.","Verser le lait de coco. Mijoter 15 min.","Assaisonner avec citron vert et coriandre."]},
+{id:192,t:"Plat",e:"🍝",n:"Risotto au safran milanais",g:["Plat","Italien","Élégant"],tm:"35 min",df:"Moyen",sv:"4",cl:"520 kcal",d:"Le risotto alla milanese, crémeux et parfumé au précieux safran.",i:["300g riz arborio","1L bouillon de veau chaud","150ml vin blanc","1 oignon","50g parmesan","50g beurre","Safran","Sel, poivre"],s:["Faire revenir l'oignon dans le beurre.","Nacrer le riz 2 min. Déglacer au vin blanc.","Ajouter le safran dilué dans le bouillon.","Ajouter le bouillon louche par louche 18 min.","Retirer du feu. Mantecare avec beurre et parmesan."]},
+{id:193,t:"Plat",e:"🥩",n:"Brochettes d'agneau au romarin",g:["Plat","Méditerranéen","Rapide","Sans gluten"],tm:"20 min",df:"Facile",sv:"4",cl:"380 kcal",d:"Des brochettes d'agneau marinées au romarin et à l'ail, grillées au barbecue.",i:["600g épaule d'agneau","4 branches romarin","3 gousses d'ail","Huile d'olive","Jus de citron","Sel, poivre","Paprika"],s:["Couper l'agneau en cubes.","Mariner avec romarin, ail, huile, citron et paprika 1h.","Monter les brochettes.","Griller au barbecue ou gril 3-4 min par face.","Servir avec tzatziki et pain pita."]},
+{id:194,t:"Plat",e:"🍗",n:"Cordon bleu maison",g:["Plat","Français","Rapide"],tm:"25 min",df:"Facile",sv:"4",cl:"520 kcal",d:"Des cordons bleus maison panés dorés avec jambon et fromage fondant.",i:["4 escalopes de poulet","8 tranches jambon cuit","100g gruyère","2 œufs","Chapelure","Farine","Beurre","Sel, poivre"],s:["Aplatir les escalopes.","Déposer jambon et gruyère. Replier et fermer.","Passer dans la farine, puis l'œuf, puis la chapelure.","Faire dorer dans le beurre mousseux 5 min par face.","Vérifier la cuisson en piquant."]},
+{id:195,t:"Plat",e:"🥘",n:"Bourguignon de champignons",g:["Plat","Français","Vegan","Végétarien","Réconfortant"],tm:"60 min",df:"Facile",sv:"4",cl:"320 kcal",d:"Un bourguignon végétalien avec différentes variétés de champignons dans un vin rouge.",i:["1kg champignons variés","200g champignons fumés","500ml bourgogne rouge","2 carottes","1 oignon","3 gousses d'ail","Bouquet garni","Beurre","Farine"],s:["Faire dorer les champignons. Réserver.","Faire revenir oignon, carottes. Saupoudrer de farine.","Déglacer avec le vin.","Ajouter ail, bouquet garni et champignons.","Mijoter 45 min."]},
+{id:196,t:"Plat",e:"🍜",n:"Salade de vermicelles asiatiques",g:["Plat","Asiatique","Vegan","Végétarien","Healthy","Rapide"],tm:"15 min",df:"Facile",sv:"4",cl:"300 kcal",d:"Salade froide de vermicelles de riz avec légumes croquants et sauce thaïe.",i:["200g vermicelles de riz","Carottes","Concombre","Menthe","Coriandre","Cacahuètes","Sauce nuoc-mâm","Citron vert","Sucre","Piment"],s:["Hydrater les vermicelles dans l'eau chaude.","Préparer la sauce : nuoc-mâm, citron vert, sucre, piment.","Couper les légumes en julienne.","Mélanger vermicelles et légumes.","Assaisonner avec la sauce. Garnir de cacahuètes."]},
+{id:197,t:"Plat",e:"🥩",n:"Paleron de bœuf confit",g:["Plat","Français","Réconfortant"],tm:"200 min",df:"Facile",sv:"6",cl:"480 kcal",d:"Un paleron de bœuf confit longuement au four, fondant et savoureux.",i:["1.5kg paleron de bœuf","500ml vin rouge","3 carottes","1 oignon","4 gousses d'ail","Bouquet garni","Tomates concassées","Huile"],s:["Faire dorer le paleron entier sur toutes les faces.","Faire revenir légumes. Déglacer au vin rouge.","Remettre le paleron. Ajouter tomates et bouquet garni.","Cuire au four à 140°C 3h.","La viande doit s'effilocher facilement."]},
+{id:198,t:"Plat",e:"🍗",n:"Poulet à la Kiev",g:["Plat","Ukrainien","Réconfortant"],tm:"40 min",df:"Moyen",sv:"4",cl:"560 kcal",d:"Le célèbre poulet Kiev avec son cœur de beurre à l'ail et aux herbes qui coule.",i:["4 blancs de poulet","100g beurre mou","3 gousses d'ail","Persil","Ciboulette","2 œufs","Chapelure","Farine","Sel, poivre"],s:["Mélanger beurre, ail, persil et ciboulette. Former des boudins. Congeler 30 min.","Aplatir les blancs. Déposer le beurre d'herbes. Rouler et fermer.","Passer dans farine, œuf, chapelure.","Réfrigérer 30 min.","Frire à 180°C 12 min ou four 180°C 20 min."]},
+{id:199,t:"Plat",e:"🥘",n:"Pilaf de riz aux légumes",g:["Plat","Vegan","Végétarien","Healthy","Rapide"],tm:"30 min",df:"Facile",sv:"4",cl:"320 kcal",d:"Un pilaf savoureux avec légumes colorés et herbes fraîches.",i:["300g riz basmati","1 oignon","2 carottes","1 poivron","Petits pois","Cumin","Curcuma","600ml bouillon légumes","Herbes fraîches","Amandes effilées"],s:["Faire revenir l'oignon avec les épices.","Ajouter carottes et poivron. Cuire 3 min.","Incorporer le riz. Nacrer 2 min.","Verser le bouillon. Couvrir et cuire 15 min.","Ajouter petits pois et herbes. Reposer 5 min."]},
+{id:200,t:"Plat",e:"🍛",n:"Curry de légumes d'automne",g:["Plat","Indien","Vegan","Végétarien","Healthy","Sans gluten"],tm:"35 min",df:"Facile",sv:"4",cl:"310 kcal",d:"Un curry automnal de butternut, pois chiches et épinards au lait de coco.",i:["1 butternut","400g pois chiches","200g épinards","400ml lait de coco","1 oignon","3 gousses d'ail","Gingembre","Curry","Curcuma","Cumin","Coriandre fraîche"],s:["Faire revenir oignon, ail, gingembre avec épices.","Ajouter butternut en cubes. Cuire 5 min.","Incorporer pois chiches, tomates et lait de coco.","Mijoter 20 min. Ajouter les épinards 3 min avant.","Garnir de coriandre fraîche."]}
+];
+
+/* ══════════════════════════
+   STATE
+   ══════════════════════════ */
+let cur=null, hTag='', exFil='', dPr=null;
+const GS=()=>{try{return JSON.parse(localStorage.getItem('cdj_v4')||'[]')}catch{return[]}};
+const SS=a=>{try{localStorage.setItem('cdj_v4',JSON.stringify(a))}catch{}};
+const IS=id=>GS().some(r=>r.id===id);
+
+/* ══════════════════════════
+   INIT
+   ══════════════════════════ */
+(()=>{
+  const D=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const M=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const d=new Date();
+  document.getElementById('hDate').textContent=`${D[d.getDay()]} ${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()}`;
+  document.getElementById('hSub').textContent=`${R.length} recettes · Fonctionne hors-ligne`;
+  document.getElementById('exSub').textContent=`${R.length} recettes disponibles`;
+  const seed=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
+  cur=R[seed%R.length];
+  renderCard(cur,false);
+  updateBadge();
+})();
+
+/* ══════════════════════════
+   NAV
+   ══════════════════════════ */
+function goS(i){
+  ['s0','s1','s2'].forEach((s,j)=>{
+    document.getElementById(s).style.display=j===i?'block':'none';
+  });
+  ['nb0','nb1','nb2'].forEach((b,j)=>document.getElementById(b).classList.toggle('on',j===i));
+  if(i===1)renderEx();
+  if(i===2)renderSaved();
+}
+document.getElementById('s1').style.display='none';
+document.getElementById('s2').style.display='none';
+
+/* ══════════════════════════
+   HOME
+   ══════════════════════════ */
+function pickTag(el,tag){
+  document.querySelectorAll('#hTags .tag').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  hTag=tag;
+  document.getElementById('kwI').value='';
+  showFiltered();
+}
+function onKw(){
+  document.querySelectorAll('#hTags .tag').forEach(t=>t.classList.remove('on'));
+  document.querySelector('#hTags .tag').classList.add('on');
+  hTag='';
+  showFiltered();
+}
+function pool(){
+  const kw=(document.getElementById('kwI').value||'').trim().toLowerCase();
+  return R.filter(r=>{
+    const mt=!hTag||r.g.includes(hTag);
+    const mk=!kw||r.n.toLowerCase().includes(kw)||r.d.toLowerCase().includes(kw)||r.i.some(x=>x.toLowerCase().includes(kw));
+    return mt&&mk;
+  });
+}
+function showFiltered(){
+  const p=pool();
+  if(!p.length){
+    document.getElementById('rArea').innerHTML=`<div style="text-align:center;padding:36px 20px;color:var(--ash)"><div style="font-size:34px;margin-bottom:9px">🔍</div><div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:5px">Aucun résultat</div><div style="font-size:13px">Essayez un autre mot-clé.</div></div>`;
+    return;
+  }
+  cur=p[Math.floor(Math.random()*p.length)];
+  renderCard(cur,true);
+}
+function shuffle(){
+  const p=pool();
+  if(!p.length){toast('Aucune recette dans ce filtre');return;}
+  let r;
+  do{r=p[Math.floor(Math.random()*p.length)];}while(p.length>1&&r.id===cur?.id);
+  cur=r;
+  renderCard(cur,true);
+}
+
+/* ══════════════════════════
+   RENDER CARD
+   ══════════════════════════ */
+function renderCard(r,anim){
+  const sv=IS(r.id);
+  const chips=[r.tm&&`<div class="cc">⏱ ${r.tm}</div>`,r.df&&`<div class="cc">👨‍🍳 ${r.df}</div>`,r.sv&&`<div class="cc">👥 ${r.sv}</div>`,r.cl&&`<div class="cc">🔥 ${r.cl}</div>`].filter(Boolean).join('');
+  const ings=(r.i||[]).map(x=>`<span class="ing">${x}</span>`).join('');
+  const steps=(r.s||[]).map((x,i)=>`<div class="step"><div class="sn">${i+1}</div><div class="st">${x}</div></div>`).join('');
+  const tc=r.t==='Entrée'?'te':'tp';
+  const hf=`<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#fff;fill:#fff;stroke-width:2;stroke-linecap:round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+  const he=`<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+  document.getElementById('rArea').innerHTML=`
+    <div class="rc${anim?' in':''}">
+      <div class="cvis">${r.e||'🍽️'}<div class="cch">${chips}</div></div>
+      <div class="cbody">
+        <span class="tbadge ${tc}">${r.t}</span>
+        <div class="cname">${r.n}</div>
+        <div class="cdesc">${r.d}</div>
+        <div class="sh">Ingrédients</div>
+        <div class="ings">${ings}</div>
+        <div class="sh">Préparation</div>
+        <div class="steps">${steps}</div>
+        <div class="cacts">
+          <button class="bsave${sv?' on':''}" id="mSvBtn" onclick="saveMain(${r.id})">
+            ${sv?hf+' Sauvegardée':he+' Sauvegarder'}
+          </button>
+          <button class="both" onclick="shuffle()">
+            <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            Autre
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════
+   SAVE
+   ══════════════════════════ */
+function saveMain(id){
+  const r=R.find(x=>x.id===id);if(!r)return;
+  const sv=GS();
+  if(sv.some(x=>x.id===id)){toast('Déjà dans vos favoris !');return;}
+  sv.unshift(r);SS(sv);updateBadge();
+  const btn=document.getElementById('mSvBtn');
+  if(btn){btn.classList.add('on');btn.innerHTML=`<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#fff;fill:#fff;stroke-width:2;stroke-linecap:round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Sauvegardée`;}
+  toast('Recette sauvegardée 🎉');
+}
+function shSave(){
+  const id=parseInt(document.getElementById('bd').dataset.id);
+  const r=R.find(x=>x.id===id);if(!r)return;
+  const sv=GS();
+  if(sv.some(x=>x.id===id)){toast('Déjà dans vos favoris !');return;}
+  sv.unshift(r);SS(sv);updateBadge();
+  const btn=document.getElementById('shSvBtn');
+  btn.classList.add('on');
+  btn.innerHTML=`<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:#fff;fill:#fff;stroke-width:2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Sauvegardée`;
+  toast('Recette sauvegardée 🎉');
+}
+
+/* ══════════════════════════
+   EXPLORE
+   ══════════════════════════ */
+function pickFil(el,f){
+  document.querySelectorAll('.fc').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');exFil=f;renderEx();
+}
+function renderEx(){
+  const kw=(document.getElementById('exI')?.value||'').trim().toLowerCase();
+  const p=R.filter(r=>{
+    const mf=!exFil||r.g.includes(exFil);
+    const mk=!kw||r.n.toLowerCase().includes(kw)||r.d.toLowerCase().includes(kw)||r.i.some(x=>x.toLowerCase().includes(kw));
+    return mf&&mk;
+  });
+  document.getElementById('exCnt').textContent=`${p.length} résultat${p.length>1?'s':''}`;
+  document.getElementById('exGrid').innerHTML=p.map(r=>{
+    const sv=IS(r.id);
+    const tc=r.t==='Entrée'?'te':'tp';
+    return `<div class="gi" onclick="openSheet(${r.id})">
+      <div class="ge">${r.e||'🍽️'}</div>
+      <div class="gc">
+        <div class="gn">${r.n}</div>
+        <div class="gm">${[r.tm&&`⏱ ${r.tm}`,r.df&&`👨‍🍳 ${r.df}`].filter(Boolean).join(' · ')}</div>
+        <div class="gtags"><span class="gtag ${tc}">${r.t}</span>${r.g.filter(x=>x!=='Entrée'&&x!=='Plat').slice(0,2).map(x=>`<span class="gtag">${x}</span>`).join('')}</div>
+      </div>
+      <div class="ghrt${sv?' on':''}" onclick="event.stopPropagation();togSv(${r.id},this)" role="button" aria-label="Favoris">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </div>
+    </div>`;
+  }).join('');
+}
+function togSv(id,el){
+  const sv=GS();
+  if(sv.some(x=>x.id===id)){SS(sv.filter(x=>x.id!==id));el.classList.remove('on');toast('Retiré des favoris');}
+  else{const r=R.find(x=>x.id===id);if(r){sv.unshift(r);SS(sv);el.classList.add('on');toast('Sauvegardée 🎉');}}
+  updateBadge();
+}
+
+/* ══════════════════════════
+   SAVED
+   ══════════════════════════ */
+function renderSaved(){
+  const sv=GS();
+  document.getElementById('svCnt').textContent=sv.length?`${sv.length} recette${sv.length>1?'s':''} sauvegardée${sv.length>1?'s':''}`:'Aucune recette sauvegardée';
+  const c=document.getElementById('svCon');
+  if(!sv.length){
+    c.innerHTML=`<div class="empty"><div class="eico">📭</div><div class="etitle">Aucun favori</div><p class="esub">Explorez les recettes et sauvegardez vos coups de cœur !</p></div>`;
+    return;
+  }
+  c.innerHTML=`<div class="svgrid">${sv.map((r,i)=>{
+    const tc=r.t==='Entrée'?'te':'tp';
+    return `<div class="gi" onclick="openSheet(${r.id})">
+      <div class="ge">${r.e||'🍽️'}</div>
+      <div class="gc">
+        <div class="gn">${r.n}</div>
+        <div class="gm">${[r.tm&&`⏱ ${r.tm}`,r.df&&`👨‍🍳 ${r.df}`].filter(Boolean).join(' · ')}</div>
+        <div class="gtags"><span class="gtag ${tc}">${r.t}</span></div>
+      </div>
+      <div class="ghrt" style="cursor:pointer" onclick="event.stopPropagation();delSv(${i})" role="button" aria-label="Supprimer">
+        <svg viewBox="0 0 24 24" style="stroke:#C0392B"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+function delSv(i){
+  const sv=GS();const n=sv[i].n;sv.splice(i,1);SS(sv);updateBadge();renderSaved();toast(`«${n}» supprimée`);
+}
+
+/* ══════════════════════════
+   SHEET
+   ══════════════════════════ */
+function openSheet(id){
+  const r=R.find(x=>x.id===id);if(!r)return;
+  document.getElementById('bd').dataset.id=id;
+  document.getElementById('sE').textContent=r.e||'🍽️';
+  document.getElementById('sN').textContent=r.n;
+  document.getElementById('sD').textContent=r.d;
+  document.getElementById('sCH').innerHTML=[
+    r.tm&&`<span class="shch">⏱ ${r.tm}</span>`,
+    r.df&&`<span class="shch">👨‍🍳 ${r.df}</span>`,
+    r.sv&&`<span class="shch">👥 ${r.sv}</span>`,
+    r.cl&&`<span class="shch">🔥 ${r.cl}</span>`
+  ].filter(Boolean).join('');
+  document.getElementById('sI').innerHTML=(r.i||[]).map(x=>`<span class="ing">${x}</span>`).join('');
+  document.getElementById('sS').innerHTML=(r.s||[]).map((x,n)=>`<div class="step"><div class="sn">${n+1}</div><div class="st">${x}</div></div>`).join('');
+  const btn=document.getElementById('shSvBtn');
+  const already=IS(id);
+  btn.className='shsv'+(already?' on':'');
+  btn.innerHTML=already
+    ?`<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:#fff;fill:#fff;stroke-width:2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Sauvegardée`
+    :`<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Sauvegarder`;
+  document.getElementById('bd').classList.add('on');
+}
+function closeSheet(){document.getElementById('bd').classList.remove('on');}
+function maybeClose(e){if(e.target===document.getElementById('bd'))closeSheet();}
+
+/* ══════════════════════════
+   BADGE + TOAST
+   ══════════════════════════ */
+function updateBadge(){
+  const n=GS().length,el=document.getElementById('nbd');
+  el.textContent=n||'';el.classList.toggle('on',n>0);
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('on');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2700);
+}
+
+/* ══════════════════════════
+   INSTALL
+   ══════════════════════════ */
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();dPr=e;document.getElementById('ib').classList.add('on');
+});
+document.getElementById('ib').addEventListener('click',async function(e){
+  if(e.target.classList.contains('ibx'))return;
+  if(dPr){dPr.prompt();await dPr.userChoice;dPr=null;this.classList.remove('on');}
+});
+function dismissInstall(e){
+  e.stopPropagation();
+  document.getElementById('ib').classList.remove('on');
+}
+
+/* ══════════════════════════
+   SERVICE WORKER
+   ══════════════════════════ */
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
